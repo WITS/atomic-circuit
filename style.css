@@ -1,0 +1,22 @@
+html {
+	overflow: hidden;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	background-color: #242424;
+}
+
+#viewport {
+	position: relative;
+	margin: auto;
+	/*background-color: #242424;*/
+	background-color: black;
+}
+
+#viewport > canvas {
+	position: absolute;
+	left: 0;
+	top: 0;
+}
