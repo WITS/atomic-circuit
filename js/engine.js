@@ -97,11 +97,15 @@ Game.prototype.render = function() {
 		if (Game.inputAtom == null && cur_atom.type == "eye") {
 			// Getting started?
 			Game.inputAtom = cur_atom;
-			Game.path.push({ atom: cur_atom, a0: 0, a1: 0 });
-		} else if (Game.inputAtom == cur_atom && cur_atom.type != "eye") {
-			// Tracing the same atom more?
-			var path_obj = Game.path[Game.path.length - 1];
-			path_obj.a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
+			Game.path.push({ atom: cur_atom, a0: 0, a1: 0, a2: 0 });
+		} else if (Game.inputAtom == cur_atom) {
+			if (cur_atom.type != "eye") {
+				// Tracing the same atom more?
+				var path_obj = Game.path[Game.path.length - 1];
+				var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
+				// TODO: Allow for switching cc more easily
+				path_obj.a1 = a1;
+			}
 		} else if (Game.inputAtom == null) {
 			// Starting, maybe...
 			var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
@@ -125,13 +129,13 @@ Game.prototype.render = function() {
 						break;
 					}
 				}
-				Game.path.push({ atom: prev_atom, a0: 0, a1: 0 });
+				Game.path.push({ atom: prev_atom, a0: 0, a1: 0, a2: 0 });
 				var a0 = Math.atan2(prev_atom.y - cur_atom.y,
 					prev_atom.x - cur_atom.x);
 				Game.inputAtom = cur_atom;
-				var pi2 = Math.PI * 2;
-				var cc = (pi2 + a0) % pi2 > (pi2 + a1) % pi2;
-				Game.path.push({ atom: cur_atom, a0: a0, a1: a1, cc: cc });
+				var cc = signedAngleDiff(a0, a1) < 0;
+				Game.path.push(
+					{ atom: cur_atom, a0: a0, a1: a1, a2: a0, cc: cc });
 			} else if (Game.debug) {
 				console.log("Join via failed");
 			}
@@ -166,25 +170,62 @@ Game.prototype.render = function() {
 					prev_path_obj.a0 + "\njoinVia: " + join_via +
 					"\nangleDiff: " + angleDiff(join_via, prev_path_obj.a0));
 			}
-			if (prev2_atom && prev2_atom.id == cur_atom.id && angleDiff(join_via, prev_path_obj.a0) < 0.1) {
-				console.log("Ayo");
-				Game.path.splice(Game.path.length - 1);
-				var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
-				prev2_path_obj.a1 = a1;
-				Game.inputAtom = prev2_atom;
+			if (prev2_atom && prev2_atom.id == cur_atom.id &&
+				angleDiff(join_via, prev_path_obj.a0) < 0.1) {
+				if (prev2_atom.type != "eye") {
+					Game.path.splice(Game.path.length - 1);
+					var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
+					prev2_path_obj.a1 = a1;
+					Game.inputAtom = prev2_atom;
+				} else {
+					// TODO: You won? Maybe?
+				}
 			} else if (join_via != null) {
 				prev_path_obj.a1 = join_via;
 				var a0x = prev_atom.x + prev_atom.r * Math.cos(join_via);
 				var a0y = prev_atom.y + prev_atom.r * Math.sin(join_via);
 				var a0 = Math.atan2(a0y - cur_atom.y, a0x - cur_atom.x);
 				Game.inputAtom = cur_atom;
-				var pi2 = Math.PI * 2;
-				var cc = (pi2 + a0) % pi2 > (pi2 + a1) % pi2;
-				Game.path.push({ atom: cur_atom, a0: a0, a1: a1, cc: cc });
+				var cc = signedAngleDiff(a0, a1) < 0;
+				Game.path.push(
+					{ atom: cur_atom, a0: a0, a1: a1, a2: a0, cc: cc });
 			} else {
 				if (Game.debug) console.log("Join via failed");
 				var a1 = Math.atan2(i_y - prev_atom.y, i_x - prev_atom.x);
 				if (angleDiff(prev_path_obj.a1, a1) <= 0.1) prev_path_obj.a1 = a1;
+			}
+		}
+	}
+	// Prevent overlap / animate path
+	if (Game.path.length) {
+		var cur_path;
+		for (var x = 0, y = Game.path.length; x < y; ++ x) {
+			var x_path = Game.path[x];
+			if (x_path.atom.type == "eye") continue;
+			if (x_path.a2 == x_path.a1) continue;
+			cur_path = x_path;
+			break;
+		}
+		if (cur_path) {
+			var max = 4 / cur_path.atom.r;
+			var diff;
+			if (angleDiff(cur_path.a2, cur_path.a1) <= max) {
+				diff = cur_path.a1 - cur_path.a2;
+				cur_path.a2 = cur_path.a1;
+			} else {
+				if ((cur_path.cc && arcLength(cur_path.a0, cur_path.a1, true) <
+					arcLength(cur_path.a0, cur_path.a2, true)) || (!cur_path.cc &&
+					arcLength(cur_path.a0, cur_path.a1, false) > arcLength(
+						cur_path.a0, cur_path.a2, false))) {
+					diff = max;
+				} else {
+					diff = -max;
+				}
+				// diff = angleDiff(
+				// 	cur_path.a2, cur_path.a1) * 0.1;
+				// var diff_sign = diff > 0 ? 1 : -1;
+				// if (Math.abs(diff) > max) diff = diff_sign * max;
+				cur_path.a2 += diff;
 			}
 		}
 	}
@@ -204,7 +245,7 @@ Game.prototype.render = function() {
 			continue;
 		}
 		ctx.arc(p.atom.x * scale, p.atom.y * scale,
-			p.atom.r * scale, p.a0, p.a1, p.cc);
+			p.atom.r * scale, p.a0, p.a2, p.cc);
 		ctx.stroke();
 	}
 	window.requestAnimationFrame(Game.render);
@@ -278,4 +319,25 @@ function angleDiff(a1, a2) {
 	a2 %= 2 * pi;
 	var a = a2 - a1;
 	return Math.abs((a + pi) % (2 * pi) - pi);
+}
+
+function signedAngleDiff(a1, a2) {
+	// Returns minimum difference between two angles
+	var pi = Math.PI;
+	while (a1 < 0) { a1 += pi * 2; }
+	while (a2 < 0) { a2 += pi * 2; }
+	a1 %= 2 * pi;
+	a2 %= 2 * pi;
+	var a = a2 - a1;
+	return (a + pi) % (2 * pi) - pi;
+}
+
+function arcLength(a1, a2, cc) {
+	var pi = Math.PI;
+	while (a1 < 0) { a1 += pi * 2; }
+	while (a2 < 0) { a2 += pi * 2; }
+	a1 %= 2 * pi;
+	a2 %= 2 * pi;
+	var a = !cc ? (a2 - a1) : (a1 - a2);
+	return (2 * pi + a) % (2 * pi);
 }
