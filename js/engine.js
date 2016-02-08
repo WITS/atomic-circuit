@@ -103,7 +103,17 @@ Game.prototype.render = function() {
 				// Tracing the same atom more?
 				var path_obj = Game.path[Game.path.length - 1];
 				var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
-				// TODO: Allow for switching cc more easily
+				// Allow for switching cc more easily
+				if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
+					) < 0.5) || (!path_obj.cc && arcLength(path_obj.a0,
+					path_obj.a1, false) < 0.5)) {
+					path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
+					if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
+						) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
+						path_obj.a1, false) > 3)) {
+						path_obj.a2 = path_obj.a0;
+					}
+				}
 				path_obj.a1 = a1;
 			}
 		} else if (Game.inputAtom == null) {
@@ -192,7 +202,19 @@ Game.prototype.render = function() {
 			} else {
 				if (Game.debug) console.log("Join via failed");
 				var a1 = Math.atan2(i_y - prev_atom.y, i_x - prev_atom.x);
-				if (angleDiff(prev_path_obj.a1, a1) <= 0.1) prev_path_obj.a1 = a1;
+				// Allow for switching cc more easily
+				var path_obj = prev_path_obj;
+				if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
+					) < 0.5) || (!path_obj.cc && arcLength(path_obj.a0,
+					path_obj.a1, false) < 0.5)) {
+					path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
+					if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
+						) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
+						path_obj.a1, false) > 3)) {
+						path_obj.a2 = path_obj.a0;
+					}
+				}
+				if (angleDiff(path_obj.a1, a1) <= 0.1) path_obj.a1 = a1;
 			}
 		}
 	}
