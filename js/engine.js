@@ -72,7 +72,21 @@ Game.prototype.generate = function() {
 Game.prototype.renderPuzzle = function() {
 	// Clear the previous pixel data
 	window.ctx = Game.c0.getContext("2d");
-	// ctx.clearRect(0, 0, Game.c0.width, Game.c0.height);
+	ctx.clearRect(0, 0, Game.c0.width, Game.c0.height);
+	// Render the dust
+	ctx.globalAlpha = "0.02";
+	ctx.globalCompositeOperation = "multiply";
+	for (var i = 1000; i --; ) {
+		ctx.beginPath();
+		ctx.fillStyle = "hsl(" + irandom(360) + ", 75%, 50%)";
+		var x = irandom(600) * scale;
+		var y = irandom(600) * scale;
+		ctx.moveTo(x, y);
+		ctx.arc(x, y, random_range(2, 40) * scale, 0, Math.PI * 2);
+		ctx.fill();
+	}
+	ctx.globalAlpha = "1";
+	ctx.globalCompositeOperation = "source-over";
 	// Render the atoms
 	for (var i = Game.atoms.length; i --; ) {
 		Game.atoms[i].render();
@@ -89,17 +103,24 @@ Game.prototype.render = function() {
 		var i_y = Game.inputY;
 		// Find the atom they're tracing
 		var cur_atom;
-		for (var i = Game.atoms.length, nearest_d = Infinity; i --; ) {
+		var nearest_d = Infinity;
+		var prev_d = Infinity;
+		for (var i = Game.atoms.length; i --; ) {
 			var atom = Game.atoms[i];
 			var r = atom.type == "eye" ? 8 : atom.r;
 			var d = Math.abs(Math.sqrt(Math.pow(i_x - atom.x, 2) +
 				Math.pow(i_y - atom.y, 2)) - r);
+			if (Game.path.length >= 2 && Game.path[1] == atom) {
+				prev_d = d;
+			}
 			if (d < nearest_d) {
 				nearest_d = d;
 				cur_atom = atom;
 			}
 		}
-		if (Game.inputAtom == null && cur_atom.type == "eye") {
+		if (nearest_d > 40) {
+			// Faaaar oooout
+		} else if (Game.inputAtom == null && cur_atom.type == "eye") {
 			// Getting started?
 			Game.inputAtom = cur_atom;
 			Game.path.push({ atom: cur_atom, a0: 0, a1: 0, a2: 0 });
@@ -195,7 +216,8 @@ Game.prototype.render = function() {
 				} else {
 					// TODO: You won? Maybe?
 				}
-			} else if (join_via != null) {
+			} else if (join_via != null && (!prev2_atom ||
+				prev2_path_obj.a2 == prev2_path_obj.a1)) {
 				prev_path_obj.a1 = join_via;
 				var a0x = prev_atom.x + prev_atom.r * Math.cos(join_via);
 				var a0y = prev_atom.y + prev_atom.r * Math.sin(join_via);
@@ -219,48 +241,83 @@ Game.prototype.render = function() {
 						path_obj.a2 = path_obj.a0;
 					}
 				}
-				if (angleDiff(path_obj.a1, a1) <= 0.1) path_obj.a1 = a1;
+				// if (angleDiff(path_obj.a1, a1) <= 0.25) path_obj.a1 = a1;
+				if (prev_d <= 15) path_obj.a1 = a1;
 			}
 		}
 	}
 	// Prevent overlap / animate path
 	if (Game.path.length) {
-		var cur_path;
+		var cur_path, cur_index;
 		for (var x = 0, y = Game.path.length; x < y; ++ x) {
 			var x_path = Game.path[x];
 			if (x_path.atom.type == "eye") continue;
 			if (x_path.a2 == x_path.a1) continue;
 			cur_path = x_path;
+			cur_index = x;
 			break;
 		}
 		if (cur_path) {
-			var max = 4 / cur_path.atom.r;
+			var max = 3.5 / cur_path.atom.r;
 			var diff;
-			if (angleDiff(cur_path.a2, cur_path.a1) <= max) {
+			var skipCollisions = false;
+			if (angleDiff(cur_path.a2, cur_path.a1) < 0.6 * max) {
 				diff = cur_path.a1 - cur_path.a2;
 				cur_path.a2 = cur_path.a1;
 			} else {
-				if ((cur_path.cc && arcLength(cur_path.a0, cur_path.a1, true) <
-					arcLength(cur_path.a0, cur_path.a2, true)) || (!cur_path.cc &&
-					arcLength(cur_path.a0, cur_path.a1, false) > arcLength(
-						cur_path.a0, cur_path.a2, false))) {
+				if (cur_path.cc && arcLength(cur_path.a0, cur_path.a1, true) <
+					arcLength(cur_path.a0, cur_path.a2, true)) {
+					diff = 2 * max;
+					skipCollisions = true;
+				} else if (!cur_path.cc && arcLength(cur_path.a0,
+					cur_path.a1, false) > arcLength(
+					cur_path.a0, cur_path.a2, false)) {
 					diff = max;
-				} else {
+				} else if (cur_path.cc && arcLength(cur_path.a0, cur_path.a1, true) >=
+					arcLength(cur_path.a0, cur_path.a2, true)) {
 					diff = -max;
+				} else {
+					diff = -2 * max;
+					skipCollisions = true;
 				}
-				// diff = angleDiff(
-				// 	cur_path.a2, cur_path.a1) * 0.1;
-				// var diff_sign = diff > 0 ? 1 : -1;
-				// if (Math.abs(diff) > max) diff = diff_sign * max;
-				cur_path.a2 += diff;
+				cur_path.a2 += 2 * diff;
+				// TODO: Prevent overlap within cur_path
+				// Collision detection
+				var cur_atom = cur_path.atom;
+				var px = cur_atom.x + cur_atom.r * Math.cos(cur_path.a2);
+				var py = cur_atom.y + cur_atom.r * Math.sin(cur_path.a2);
+				for (var i = cur_index; i --; ) {
+					var i_path = Game.path[i];
+					var i_atom = i_path.atom;
+					// No hair, don't care
+					if (i_atom.type == "eye") continue;
+					var d = Math.sqrt(Math.pow(i_atom.x - px, 2) +
+						Math.pow(i_atom.y - py, 2));
+					// Not on this atom
+					if (Math.abs(i_atom.r - d) > 5) continue;
+					// Does it fall on this path?
+					var a = Math.atan2(py - i_atom.y, px - i_atom.x);
+					if ((i_path.cc && arcLength(i_path.a0, i_path.a1, true) >
+						arcLength(i_path.a0, a, true)) || (!i_path.cc &&
+						arcLength(i_path.a0, i_path.a1, false) > arcLength(
+							i_path.a0, a, false))) {
+						console.log("Recall // a: " + a + " for i_path#" + i);
+						cur_path.a2 -= diff;
+						cur_path.a1 = cur_path.a2 - diff;
+						Game.path.splice(cur_index + 1);
+						if (Game.inputHeld) Game.inputAtom = cur_atom;
+						break;
+					}
+				}
+				cur_path.a2 -= diff;
 			}
 		}
 	}
 	// Clear the previous pixel data
 	ctx.clearRect(0, 0, Game.c1.width, Game.c1.height);
 	// Render the user path
-	ctx.fillStyle = "#00FFFF";
-	ctx.strokeStyle = "#00FFFF";
+	ctx.fillStyle = "white";
+	ctx.strokeStyle = "white";
 	ctx.lineWidth = 3 * scale;
 	ctx.lineCap = "round";
 	var pi = Math.PI;
@@ -339,6 +396,10 @@ window.addEventListener("mouseup", function(event) {
 // Helper functions
 function irandom(n) {
 	return Math.floor(n * Math.random());
+}
+
+function random_range(min, max) {
+	return min + (max - min) * Math.random();
 }
 
 function angleDiff(a1, a2) {

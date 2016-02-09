@@ -51,7 +51,7 @@ Atom.prototype.findIntersections = function() {
 
 Atom.prototype.render = function() {
 	if (this.type == "eye") {
-		ctx.fillStyle = "white";
+		ctx.fillStyle = "#C7C7C7";
 		ctx.beginPath();
 		ctx.arc(this.x * scale, this.y * scale, 8 * scale,
 			0, Math.PI * 2);
@@ -59,7 +59,7 @@ Atom.prototype.render = function() {
 		return;
 	}
 	ctx.lineWidth = scale * 2;
-	ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+	ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
 	ctx.beginPath();
 	ctx.arc(this.x * scale, this.y * scale, this.r * scale,
 		0, Math.PI * 2);
