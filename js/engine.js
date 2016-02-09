@@ -40,18 +40,18 @@ Game.prototype.generate = function() {
 	window.NEXT_ATOM_ID = 0;
 	this.atoms.push(new Atom({
 		type: "eye",
-		x: 125,
+		x: 50,
 		y: 300
 	}));
 	this.atoms.push(new Atom({
-		x: 200,
+		x: 150,
 		y: 300,
-		r: 75
+		r: 100
 	}));
 	this.atoms.push(new Atom({
 		x: 300,
 		y: 300,
-		r: 75
+		r: 130
 	}));
 	this.atoms.push(new Atom({
 		x: 300,
@@ -59,9 +59,9 @@ Game.prototype.generate = function() {
 		r: 100
 	}));
 	this.atoms.push(new Atom({
-		x: 400,
+		x: 450,
 		y: 300,
-		r: 75
+		r: 100
 	}));
 	// Find points of intersection
 	for (var i = Game.atoms.length; i --; ) {
@@ -81,7 +81,7 @@ Game.prototype.renderPuzzle = function() {
 	// Render the dust
 	ctx.globalAlpha = "0.02";
 	ctx.globalCompositeOperation = "multiply";
-	for (var i = 1000; i --; ) {
+	for (var i = IS_MOBILE ? 5 : 750; i --; ) {
 		ctx.beginPath();
 		ctx.fillStyle = "hsl(" + irandom(360) + ", 75%, 50%)";
 		var x = irandom(600) * scale;
@@ -101,7 +101,8 @@ Game.prototype.renderPuzzle = function() {
 }
 
 // Update / render user path
-Game.prototype.render = function() {
+Game.prototype.render = function(skipRender) {
+	var skipRender = skipRender === true;
 	// Update the path
 	if (Game.inputHeld) {
 		var i_x = Game.inputX;
@@ -318,6 +319,7 @@ Game.prototype.render = function() {
 			}
 		}
 	}
+	if (skipRender) return;
 	// Clear the previous pixel data
 	ctx.clearRect(0, 0, Game.c1.width, Game.c1.height);
 	// Render the user path
@@ -341,6 +343,11 @@ Game.prototype.render = function() {
 		ctx.stroke();
 	}
 	ctx.lineCap = "butt";
+	if (IS_MOBILE) {
+		setTimeout(function() {
+			Game.render(true);
+		}, 2);
+	}
 	window.requestAnimationFrame(Game.render);
 }
 
@@ -359,7 +366,8 @@ function handle_resize() {
 	var l = Math.min(window.innerWidth, window.innerHeight);
 	v.style.width = c0.style.width = c1.style.width = l + "px";
 	v.style.height = c0.style.height = c1.style.height = l + "px";
-	l *= window.devicePixelRatio || 1;
+	window.pixelRatio = window.devicePixelRatio || 1;
+	l *= pixelRatio;
 	c0.width = c1.width = l;
 	c0.height = c1.height = l;
 	window.scale = Game.scale = l / 600;
@@ -376,8 +384,8 @@ window.addEventListener("resize", handle_resize);
 
 // Input
 function updateMousePosition(e) {
-	Game.inputX = (e.clientX - Game.xOffset) / Game.scale;
-	Game.inputY = (e.clientY - Game.yOffset) / Game.scale;
+	Game.inputX = (e.clientX - Game.xOffset) * pixelRatio / Game.scale;
+	Game.inputY = (e.clientY - Game.yOffset) * pixelRatio / Game.scale;
 }
 
 window.addEventListener("mousedown", function(event) {
@@ -396,7 +404,36 @@ window.addEventListener("mouseup", function(event) {
 	Game.inputAtom = null;
 	// Clear the path?
 	if (!Game.debug) Game.path.splice(0);
-})
+});
+
+function updateTouchPosition(e) {
+	if (!e.touches.length) return;
+	var t = e.touches[0];
+	Game.inputX = (t.clientX - Game.xOffset) * pixelRatio / Game.scale;
+	Game.inputY = (t.clientY - Game.yOffset) * pixelRatio / Game.scale;
+}
+
+window.addEventListener("touchstart", function(event) {
+	Game.inputHeld = true;
+	updateTouchPosition(event);
+	// Clear the path?
+	if (Game.debug) Game.path.splice(0);
+});
+
+window.addEventListener("touchmove", function(event) {
+	updateTouchPosition(event);
+});
+
+window.addEventListener("touchend", function(event) {
+	if (event.touches.length) return;
+	Game.inputHeld = false;
+	Game.inputAtom = null;
+	// Clear the path?
+	if (!Game.debug) Game.path.splice(0);
+});
+
+IS_MOBILE = /(iPhone|iPod|iPad|Android|BlackBerry)/i.test(
+	navigator.userAgent);
 
 // Helper functions
 function irandom(n) {
