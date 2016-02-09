@@ -23,7 +23,7 @@ body {
 	top: 0;
 }
 
-#viewport::after {
+#viewport:not([zoom=true])::after {
 	position: absolute;
 	left: 0;
 	top: 0;

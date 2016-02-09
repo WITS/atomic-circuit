@@ -81,15 +81,17 @@ Game.prototype.renderPuzzle = function() {
 	window.ctx = Game.c0.getContext("2d");
 	ctx.clearRect(0, 0, Game.c0.width, Game.c0.height);
 	// Render the dust
-	ctx.globalAlpha = "0.02";
+	ctx.globalAlpha = IS_MOBILE ? "0.03" : "0.02";
 	ctx.globalCompositeOperation = "multiply";
-	for (var i = IS_MOBILE ? 5 : 750; i --; ) {
+	for (var i = 25; i --; ) {
 		ctx.beginPath();
 		ctx.fillStyle = "hsl(" + irandom(360) + ", 75%, 50%)";
-		var x = irandom(600) * scale;
-		var y = irandom(600) * scale;
-		ctx.moveTo(x, y);
-		ctx.arc(x, y, random_range(2, 40) * scale, 0, Math.PI * 2);
+		for (var j = 30; j --; ) {
+			var x = irandom(600) * scale;
+			var y = irandom(600) * scale;
+			ctx.moveTo(x, y);
+			ctx.arc(x, y, random_range(2, 40) * scale, 0, Math.PI * 2);
+		}
 		ctx.fill();
 	}
 	ctx.globalAlpha = "1";
@@ -375,6 +377,11 @@ Game = new Game();
 
 window.addEventListener("load", function() {
 	Game.init();
+	if (IS_TOUCH_DEVICE) {
+		document.body.addEventListener("touchmove", function(event) {
+			event.preventDefault();
+		});
+	}
 });
 
 function handle_resize() {
@@ -440,6 +447,7 @@ function updateTouchPosition(e) {
 
 window.addEventListener("touchstart", function(event) {
 	Game.inputHeld = true;
+	if (IS_SMALL) Game.v.setAttribute("data-zoom", "true");
 	updateTouchPosition(event);
 	// Clear the path?
 	if (Game.debug) Game.path.splice(0);
@@ -453,6 +461,7 @@ window.addEventListener("touchend", function(event) {
 	if (event.touches.length) return;
 	Game.inputHeld = false;
 	Game.inputAtom = null;
+	if (IS_SMALL) Game.v.setAttribute("data-zoom", "false");
 	// Clear the path?
 	if (!Game.debug) Game.path.splice(0);
 });
