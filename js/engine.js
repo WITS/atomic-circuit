@@ -15,6 +15,8 @@ Game.prototype.v = null;
 Game.prototype.c0 = null;
 Game.prototype.c1 = null;
 Game.prototype.inputHeld = false;
+Game.prototype.rawInputX = 0;
+Game.prototype.rawInputY = 0;
 Game.prototype.inputX = 0;
 Game.prototype.inputY = 0;
 Game.prototype.inputAtom = null;
@@ -105,6 +107,22 @@ Game.prototype.render = function(skipRender) {
 	var skipRender = skipRender === true;
 	// Update the path
 	if (Game.inputHeld) {
+		// CSS Transforms?
+		if (IS_SMALL) {
+			if (IS_WEBKIT) {
+				Game.v.style.webkitTransform = "scale(1.5)";
+				Game.v.style.webkitTransformOriginX = Game.rawInputX + "px";
+				Game.v.style.webkitTransformOriginY = Game.rawInputY + "px";
+			} else if (IS_FIREFOX) {
+				Game.v.style.mozTransform = "scale(1.5)";
+				Game.v.style.mozTransformOriginX = Game.rawInputX + "px";
+				Game.v.style.mozTransformOriginY = Game.rawInputY + "px";
+			} else {
+				Game.v.style.transform = "scale(1.5)";
+				Game.v.style.transformOriginX = Game.rawInputX + "px";
+				Game.v.style.transformOriginY = Game.rawInputY + "px";
+			}
+		}
 		var i_x = Game.inputX;
 		var i_y = Game.inputY;
 		// Find the atom they're tracing
@@ -251,6 +269,8 @@ Game.prototype.render = function(skipRender) {
 				if (prev_d <= 15) path_obj.a1 = a1;
 			}
 		}
+	} else {
+		Game.v.style.webkitTransform = "";
 	}
 	// Prevent overlap / animate path
 	if (Game.path.length) {
@@ -364,6 +384,7 @@ function handle_resize() {
 	var c1 = Game.c1;
 	if (!v) return;
 	var l = Math.min(window.innerWidth, window.innerHeight);
+	IS_SMALL = l < 400;
 	v.style.width = c0.style.width = c1.style.width = l + "px";
 	v.style.height = c0.style.height = c1.style.height = l + "px";
 	window.pixelRatio = window.devicePixelRatio || 1;
@@ -384,8 +405,10 @@ window.addEventListener("resize", handle_resize);
 
 // Input
 function updateMousePosition(e) {
-	Game.inputX = (e.clientX - Game.xOffset) * pixelRatio / Game.scale;
-	Game.inputY = (e.clientY - Game.yOffset) * pixelRatio / Game.scale;
+	Game.rawInputX = e.clientX - Game.xOffset;
+	Game.rawInputY = e.clientY - Game.yOffset;
+	Game.inputX = Game.rawInputX * pixelRatio / Game.scale;
+	Game.inputY = Game.rawInputY * pixelRatio / Game.scale;
 }
 
 window.addEventListener("mousedown", function(event) {
@@ -409,8 +432,10 @@ window.addEventListener("mouseup", function(event) {
 function updateTouchPosition(e) {
 	if (!e.touches.length) return;
 	var t = e.touches[0];
-	Game.inputX = (t.clientX - Game.xOffset) * pixelRatio / Game.scale;
-	Game.inputY = (t.clientY - Game.yOffset) * pixelRatio / Game.scale;
+	Game.rawInputX = t.clientX - Game.xOffset;
+	Game.rawInputY = t.clientY - Game.yOffset;
+	Game.inputX = Game.rawInputX * pixelRatio / Game.scale;
+	Game.inputY = Game.rawInputY * pixelRatio / Game.scale;
 }
 
 window.addEventListener("touchstart", function(event) {
@@ -432,8 +457,22 @@ window.addEventListener("touchend", function(event) {
 	if (!Game.debug) Game.path.splice(0);
 });
 
-IS_MOBILE = /(iPhone|iPod|iPad|Android|BlackBerry)/i.test(
-	navigator.userAgent);
+IS_SMALL = false;
+IS_TOUCH_DEVICE = !!(('ontouchstart' in window) ||
+	window.DocumentTouch && document instanceof DocumentTouch);
+var userAgent = navigator.userAgent;
+IS_MOBILE = /(iPhone|iPod|iPad|Android|BlackBerry)/i.test(userAgent);
+IS_FIREFOX = (/\bfirefox\//i.test(userAgent) &&
+	!/\bseamonkey\//i.test(userAgent));
+IS_CHROME = (/\bchrome\//i.test(userAgent) &&
+	!/\b(?:chromium|edge)\//i.test(userAgent));
+IS_SAFARI = (/\bsafari\//i.test(userAgent) &&
+	!/\b(?:chrome|chromium)\//i.test(userAgent));
+IS_OPERA = (/\b(?:opera|opr)\//i.test(userAgent));
+IS_WEBKIT = (IS_CHROME || IS_SAFARI || IS_OPERA);
+IS_MSIE = (/\b(?:MSIE|Trident)\b/i.test(userAgent));
+IS_MSIE_9 = (userAgent.indexOf("MSIE 9") != -1);
+IS_EDGE = (userAgent.indexOf("Edge") != -1);
 
 // Helper functions
 function irandom(n) {
