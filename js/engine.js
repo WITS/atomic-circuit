@@ -363,11 +363,11 @@ Game.prototype.render = function(skipRender) {
 		ctx.stroke();
 	}
 	ctx.lineCap = "butt";
-	if (IS_MOBILE) {
+	// if (IS_MOBILE) {
 		setTimeout(function() {
 			Game.render(true);
 		}, 2);
-	}
+	// }
 	window.requestAnimationFrame(Game.render);
 }
 
