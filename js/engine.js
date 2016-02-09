@@ -1,3 +1,8 @@
+/*
+ * Engine.js - handles puzzle loading, updating, rendering, and input
+ * Copyright (c) 2016 Ian Jones
+ */
+
 Game = function() {
 	this.atoms = new Array();
 	this.negative = new Array();

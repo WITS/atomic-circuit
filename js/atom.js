@@ -1,3 +1,8 @@
+/*
+ * Atom.js - defines the Atom prototype
+ * Copyright (c) 2016 Ian Jones
+ */
+
 Atom = function(json) {
 	var json = json || {};
 	this.id = NEXT_ATOM_ID ++;
