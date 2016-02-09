@@ -35,23 +35,28 @@ Game.prototype.generate = function() {
 	window.NEXT_ATOM_ID = 0;
 	this.atoms.push(new Atom({
 		type: "eye",
-		x: 75,
+		x: 125,
 		y: 300
 	}));
 	this.atoms.push(new Atom({
-		x: 150,
+		x: 200,
 		y: 300,
 		r: 75
 	}));
 	this.atoms.push(new Atom({
-		x: 250,
+		x: 300,
 		y: 300,
 		r: 75
 	}));
 	this.atoms.push(new Atom({
-		x: 250,
+		x: 300,
 		y: 300,
 		r: 100
+	}));
+	this.atoms.push(new Atom({
+		x: 400,
+		y: 300,
+		r: 75
 	}));
 	// Find points of intersection
 	for (var i = Game.atoms.length; i --; ) {
@@ -257,6 +262,7 @@ Game.prototype.render = function() {
 	ctx.fillStyle = "#00FFFF";
 	ctx.strokeStyle = "#00FFFF";
 	ctx.lineWidth = 3 * scale;
+	ctx.lineCap = "round";
 	for (var i = Game.path.length; i --; ) {
 		var p = Game.path[i];
 		ctx.beginPath();
@@ -270,6 +276,7 @@ Game.prototype.render = function() {
 			p.atom.r * scale, p.a0, p.a2, p.cc);
 		ctx.stroke();
 	}
+	ctx.lineCap = "butt";
 	window.requestAnimationFrame(Game.render);
 }
 
