@@ -110,8 +110,8 @@ Game.prototype.render = function() {
 				var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
 				// Allow for switching cc more easily
 				if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
-					) < 0.5) || (!path_obj.cc && arcLength(path_obj.a0,
-					path_obj.a1, false) < 0.5)) {
+					) < 0.25) || (!path_obj.cc && arcLength(path_obj.a0,
+					path_obj.a1, false) < 0.25)) {
 					path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
 					if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
 						) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
@@ -210,8 +210,8 @@ Game.prototype.render = function() {
 				// Allow for switching cc more easily
 				var path_obj = prev_path_obj;
 				if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
-					) < 0.5) || (!path_obj.cc && arcLength(path_obj.a0,
-					path_obj.a1, false) < 0.5)) {
+					) < 0.25) || (!path_obj.cc && arcLength(path_obj.a0,
+					path_obj.a1, false) < 0.25)) {
 					path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
 					if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
 						) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
@@ -263,6 +263,7 @@ Game.prototype.render = function() {
 	ctx.strokeStyle = "#00FFFF";
 	ctx.lineWidth = 3 * scale;
 	ctx.lineCap = "round";
+	var pi = Math.PI;
 	for (var i = Game.path.length; i --; ) {
 		var p = Game.path[i];
 		ctx.beginPath();
@@ -273,7 +274,8 @@ Game.prototype.render = function() {
 			continue;
 		}
 		ctx.arc(p.atom.x * scale, p.atom.y * scale,
-			p.atom.r * scale, p.a0, p.a2, p.cc);
+			p.atom.r * scale, (pi*2 + p.a0) % (pi*2),
+			(pi*2 + p.a2) % (pi*2), p.cc);
 		ctx.stroke();
 	}
 	ctx.lineCap = "butt";
