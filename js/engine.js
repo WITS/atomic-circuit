@@ -65,6 +65,11 @@ Game.prototype.generate = function() {
 		y: 300,
 		r: 100
 	}));
+	this.atoms.push(new Atom({
+		type: "eye",
+		x: 550,
+		y: 300
+	}));
 	// Find points of intersection
 	for (var i = Game.atoms.length; i --; ) {
 		Game.atoms[i].findIntersections();
@@ -155,18 +160,23 @@ Game.prototype.render = function(skipRender) {
 				// Tracing the same atom more?
 				var path_obj = Game.path[Game.path.length - 1];
 				var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
-				// Allow for switching cc more easily
-				if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
-					) < 0.25) || (!path_obj.cc && arcLength(path_obj.a0,
-					path_obj.a1, false) < 0.25)) {
-					path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
+				if (arcLength(path_obj.a0, path_obj.a1, path_obj.cc) >
+					3 + arcLength(path_obj.a0, a1, path_obj.cc)) {
+					console.log("Whoa nelly v1");
+				} else {
+					// Allow for switching cc more easily
 					if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
-						) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
-						path_obj.a1, false) > 3)) {
-						path_obj.a2 = path_obj.a0;
+						) < 0.25) || (!path_obj.cc && arcLength(path_obj.a0,
+						path_obj.a1, false) < 0.25)) {
+						path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
+						if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
+							) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
+							path_obj.a1, false) > 3)) {
+							path_obj.a2 = path_obj.a0;
+						}
 					}
+					path_obj.a1 = a1;
 				}
-				path_obj.a1 = a1;
 			}
 		} else if (Game.inputAtom == null) {
 			// Starting, maybe...
@@ -199,7 +209,7 @@ Game.prototype.render = function(skipRender) {
 				Game.path.push(
 					{ atom: cur_atom, a0: a0, a1: a1, a2: a0, cc: cc });
 			} else if (Game.debug) {
-				console.log("Join via failed");
+				console.log("Join via failed v1");
 			}
 		} else if (Game.path.length) {
 			// Retracing your steps?
@@ -218,8 +228,8 @@ Game.prototype.render = function(skipRender) {
 				var intersection = prev_atom.intersections[i];
 				if (intersection.id == cur_atom.id) {
 					var a = angleDiff(intersection.a, prev_path_obj.a1);
-					console.log("Intersection // a = " + a);
-					console.log(intersection);
+					// console.log("Intersection // a = " + a);
+					// console.log(intersection);
 					if (a < nearest_a) {
 						nearest_a = a;
 						join_via = intersection.a;
@@ -235,12 +245,23 @@ Game.prototype.render = function(skipRender) {
 			if (prev2_atom && prev2_atom.id == cur_atom.id &&
 				angleDiff(join_via, prev_path_obj.a0) < 0.1) {
 				if (prev2_atom.type != "eye") {
-					Game.path.splice(Game.path.length - 1);
-					var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
-					prev2_path_obj.a1 = a1;
-					Game.inputAtom = prev2_atom;
+					var path_obj = prev_path_obj;
+					var a1 = Math.atan2(i_y - prev_atom.y, i_x - prev_atom.x);
+					if (arcLength(path_obj.a0, path_obj.a1, path_obj.cc) >
+						3 + arcLength(path_obj.a0, a1, path_obj.cc)) {
+						console.log("Join via failed v3");
+						console.log("Whoa nelly v3");
+					} else {
+						var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
+						Game.path.splice(Game.path.length - 1);
+						prev2_path_obj.a1 = a1;
+						Game.inputAtom = prev2_atom;
+					}
 				} else {
-					// TODO: You won? Maybe?
+					// You won? Maybe?
+					Game.path.push({ atom: cur_atom, a0: 0, a1: 0, a2: 0, cc: false });
+					prev_path_obj.a1 = prev_path_obj.a0 + Math.PI * 2 +
+						(prev_path_obj.cc ? 1 : -1) * 2e-4;
 				}
 			} else if (join_via != null && (!prev2_atom ||
 				prev2_path_obj.a2 == prev2_path_obj.a1)) {
@@ -253,22 +274,27 @@ Game.prototype.render = function(skipRender) {
 				Game.path.push(
 					{ atom: cur_atom, a0: a0, a1: a1, a2: a0, cc: cc });
 			} else {
-				if (Game.debug) console.log("Join via failed");
-				var a1 = Math.atan2(i_y - prev_atom.y, i_x - prev_atom.x);
-				// Allow for switching cc more easily
+				if (Game.debug) console.log("Join via failed v2");
 				var path_obj = prev_path_obj;
-				if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
-					) < 0.25) || (!path_obj.cc && arcLength(path_obj.a0,
-					path_obj.a1, false) < 0.25)) {
-					path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
+				var a1 = Math.atan2(i_y - prev_atom.y, i_x - prev_atom.x);
+				if (arcLength(path_obj.a0, path_obj.a1, path_obj.cc) >
+					3 + arcLength(path_obj.a0, a1, path_obj.cc)) {
+					console.log("Whoa nelly v2");
+				} else {
+					// Allow for switching cc more easily
 					if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
-						) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
-						path_obj.a1, false) > 3)) {
-						path_obj.a2 = path_obj.a0;
+						) < 0.25) || (!path_obj.cc && arcLength(path_obj.a0,
+						path_obj.a1, false) < 0.25)) {
+						path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
+						if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
+							) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
+							path_obj.a1, false) > 3)) {
+							path_obj.a2 = path_obj.a0;
+						}
 					}
+					// if (angleDiff(path_obj.a1, a1) <= 0.25) path_obj.a1 = a1;
+					if (prev_d <= 15) path_obj.a1 = a1;
 				}
-				// if (angleDiff(path_obj.a1, a1) <= 0.25) path_obj.a1 = a1;
-				if (prev_d <= 15) path_obj.a1 = a1;
 			}
 		}
 	} else {
@@ -279,7 +305,14 @@ Game.prototype.render = function(skipRender) {
 		var cur_path, cur_index;
 		for (var x = 0, y = Game.path.length; x < y; ++ x) {
 			var x_path = Game.path[x];
-			if (x_path.atom.type == "eye") continue;
+			if (x_path.atom.type == "eye" && !x) continue;
+			if (x_path.atom.type == "eye" && x) {
+				if (Game.inputHeld) {
+					Game.inputHeld = false;
+					alert("We've got a winner folks");
+				}
+				break;
+			}
 			if (x_path.a2 == x_path.a1) continue;
 			cur_path = x_path;
 			cur_index = x;

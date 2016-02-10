@@ -70,7 +70,7 @@ Atom.prototype.render = function() {
 		0, Math.PI * 2);
 	ctx.stroke();
 	// Draw intersections
-	if (Game.debug) {
+	if (false && Game.debug) {
 		ctx.fillStyle = "red";
 		for (var i = this.intersections.length; i --; ) {
 			var intersection = this.intersections[i];
