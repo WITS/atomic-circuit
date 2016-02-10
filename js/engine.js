@@ -20,6 +20,7 @@ Game.prototype.rawInputY = 0;
 Game.prototype.inputX = 0;
 Game.prototype.inputY = 0;
 Game.prototype.inputAtom = null;
+Game.prototype.glowInc = 0;
 
 // Initialize the DOM elements
 Game.prototype.init = function() {
@@ -407,24 +408,43 @@ Game.prototype.render = function(skipRender) {
 	// Clear the previous pixel data
 	ctx.clearRect(0, 0, Game.c1.width, Game.c1.height);
 	// Render the user path
+	var glow = l_glow = 0;
+	if (!IS_MOBILE) {
+		glow = (12 + 4 * Math.sin(Game.glowInc * 0.08)) * scale;
+		l_glow = 0.75 * glow;
+		++ Game.glowInc;
+	}
 	ctx.fillStyle = "white";
 	ctx.strokeStyle = "white";
 	ctx.lineWidth = 3 * scale;
 	ctx.lineCap = "round";
+	if (!IS_MOBILE) {
+		ctx.shadowColor = "white";
+	}
+	ctx.shadowBlur = glow;
 	var pi = Math.PI;
 	for (var i = Game.path.length; i --; ) {
 		var p = Game.path[i];
 		ctx.beginPath();
+		ctx.shadowBlur = glow;
 		if (p.atom.type == "eye") {
-			ctx.arc(p.atom.x * scale, p.atom.y * scale,
-				8 * scale, 0, Math.PI * 2);
-			ctx.fill();
+			if (!i || Game.path[i - 1].a1 == Game.path[i - 1].a2) {
+				if (!IS_MOBILE) ctx.shadowBlur = l_glow;
+				ctx.arc(p.atom.x * scale, p.atom.y * scale,
+					8 * scale, 0, Math.PI * 2);
+				ctx.fill();
+				if (!IS_MOBILE) ctx.shadowBlur = glow;
+			}
 			continue;
 		}
 		ctx.arc(p.atom.x * scale, p.atom.y * scale,
 			p.atom.r * scale, (pi*2 + p.a0) % (pi*2),
 			(pi*2 + p.a2) % (pi*2), p.cc);
 		ctx.stroke();
+	}
+	if (!IS_MOBILE) {
+		ctx.shadowColor = "transparent";
+		ctx.shadowBlur = 0;
 	}
 	ctx.lineCap = "butt";
 	// if (IS_MOBILE) {
