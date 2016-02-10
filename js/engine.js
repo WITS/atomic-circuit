@@ -37,6 +37,7 @@ Game.prototype.init = function() {
 // Generate a puzzle (or, occasionally, load a premade one)
 Game.prototype.generate = function() {
 	// Clear the previous puzzle's data
+	Game.isSolved = false;
 	Game.atoms.splice(0);
 	Game.negative.splice(0);
 	Game.path.splice(0);
@@ -245,7 +246,7 @@ Game.prototype.render = function(skipRender) {
 					"\nangleDiff: " + angleDiff(join_via, prev_path_obj.a0));
 			}
 			if (prev2_atom && prev2_atom.id == cur_atom.id &&
-				angleDiff(join_via, prev_path_obj.a0) < 0.1) {
+				angleDiff(join_via, prev_path_obj.a0) < 0.2) {
 				if (prev2_atom.type != "eye") {
 					var path_obj = prev_path_obj;
 					var a1 = Math.atan2(i_y - prev_atom.y, i_x - prev_atom.x);
@@ -259,7 +260,8 @@ Game.prototype.render = function(skipRender) {
 						prev2_path_obj.a1 = a1;
 						Game.inputAtom = prev2_atom;
 					}
-				} else {
+				} else if (arcLength(prev_path_obj.a0, prev_path_obj.a1,
+						prev_path_obj.cc) > 5) {
 					// You won? Maybe?
 					Game.path.push({ atom: cur_atom, a0: 0, a1: 0, a2: 0, cc: false });
 					prev_path_obj.a1 = prev_path_obj.a0 + Math.PI * 2 +
