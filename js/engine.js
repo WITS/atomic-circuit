@@ -265,7 +265,8 @@ Game.prototype.render = function(skipRender) {
 						(prev_path_obj.cc ? 1 : -1) * 2e-4;
 				}
 			} else if (join_via != null && (!prev2_atom ||
-				prev2_path_obj.a2 == prev2_path_obj.a1)) {
+				(prev2_path_obj.a2 == prev2_path_obj.a1 ||
+				prev2_path_obj.atom.type == "eye"))) {
 				prev_path_obj.a1 = join_via;
 				var a0x = prev_atom.x + prev_atom.r * Math.cos(join_via);
 				var a0y = prev_atom.y + prev_atom.r * Math.sin(join_via);
