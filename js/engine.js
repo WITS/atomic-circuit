@@ -342,9 +342,28 @@ Game.prototype.render = function(skipRender) {
 					skipCollisions = true;
 				}
 				cur_path.a2 += 2 * diff;
-				// TODO: Prevent overlap within cur_path
-				// Collision detection
+				// One last eye detector
 				var cur_atom = cur_path.atom;
+				if (cur_index >= 2) {
+					for (var i = cur_atom.intersections.length; i --; ) {
+						var intersection = cur_atom.intersections[i];
+						if (intersection.type != "eye") continue;
+						var a = intersection.a;
+						if ((cur_path.cc && arcLength(cur_path.a0, cur_path.a1, true) >
+						arcLength(cur_path.a0, a, true)) || (!cur_path.cc &&
+						arcLength(cur_path.a0, cur_path.a1, false) > arcLength(
+							cur_path.a0, a, false))) {
+							console.log("This should probly be a win.");
+							var eye = Game.getAtom(intersection.id);
+							cur_path.a1 = a;
+							Game.path.push({ atom: eye, a0: 0, a1: 0, a2: 0, cc: false });
+							if (Game.inputHeld) {
+								Game.inputAtom = eye;
+							}
+						}
+					}
+				}
+				// Collision detection
 				var px = cur_atom.x + cur_atom.r * Math.cos(cur_path.a2);
 				var py = cur_atom.y + cur_atom.r * Math.sin(cur_path.a2);
 				for (var i = cur_index; i --; ) {
@@ -363,6 +382,16 @@ Game.prototype.render = function(skipRender) {
 						arcLength(i_path.a0, i_path.a1, false) > arcLength(
 							i_path.a0, a, false))) {
 						console.log("Recall // a: " + a + " for i_path#" + i);
+						if (i == 1 && cur_atom == i_atom) {
+							console.log("This should probably be a win");
+							var eye = Game.path[0].atom;
+							cur_path.a1 = i_path.a0;
+							Game.path.push({ atom: eye, a0: 0, a1: 0, a2: 0, cc: false });
+							if (Game.inputHeld) {
+								Game.inputAtom = eye;
+							}
+							break;
+						}
 						cur_path.a2 -= diff;
 						cur_path.a1 = cur_path.a2 - diff;
 						Game.path.splice(cur_index + 1);
@@ -404,6 +433,14 @@ Game.prototype.render = function(skipRender) {
 		}, 2);
 	// }
 	window.requestAnimationFrame(Game.render);
+}
+
+Game.prototype.getAtom = function(id) {
+	for (var i = Game.atoms.length; i --; ) {
+		if (Game.atoms[i].id != id) continue;
+		return Game.atoms[i];
+	}
+	return null;
 }
 
 Game = new Game();
