@@ -37,6 +37,7 @@ Game.prototype.init = function() {
 // Generate a puzzle (or, occasionally, load a premade one)
 Game.prototype.generate = function() {
 	// Clear the previous puzzle's data
+	Game.v.removeAttribute("data-solved");
 	Game.isSolved = false;
 	Game.atoms.splice(0);
 	Game.negative.splice(0);
@@ -328,7 +329,8 @@ Game.prototype.render = function(skipRender) {
 					// TODO: Actually test the game and make sure
 					// this solution is valid
 					Game.isSolved = true;
-					alert("We've got a winner folks");
+					Game.v.setAttribute("data-solved", "true");
+					// alert("We've got a winner folks");
 				}
 				break;
 			}
@@ -497,6 +499,7 @@ Game = new Game();
 
 window.addEventListener("load", function() {
 	Game.init();
+	if (IS_MOBILE) document.body.className += "mobile";
 	if (IS_TOUCH_DEVICE) {
 		document.body.addEventListener("touchmove", function(event) {
 			event.preventDefault();
@@ -514,6 +517,9 @@ function handle_resize() {
 	IS_SMALL = l < 400;
 	v.style.width = c0.style.width = c1.style.width = l + "px";
 	v.style.height = c0.style.height = c1.style.height = l + "px";
+	// Update base font size
+	document.body.style.fontSize = (l * 0.02) + "px";
+	// Get the devicePixelRatio
 	window.pixelRatio = window.devicePixelRatio || 1;
 	l *= pixelRatio;
 	c0.width = c1.width = l;
@@ -539,6 +545,7 @@ function updateMousePosition(e) {
 }
 
 window.addEventListener("mousedown", function(event) {
+	if (Game.isSolved) return;
 	Game.inputHeld = true;
 	updateMousePosition(event);
 	// Clear the path?
@@ -546,6 +553,7 @@ window.addEventListener("mousedown", function(event) {
 });
 
 window.addEventListener("mousemove", function(event) {
+	if (Game.isSolved) return;
 	if (Game.inputHeld) updateMousePosition(event);
 });
 
@@ -566,6 +574,7 @@ function updateTouchPosition(e) {
 }
 
 window.addEventListener("touchstart", function(event) {
+	if (Game.isSolved) return;
 	Game.inputHeld = true;
 	if (IS_SMALL) Game.v.setAttribute("data-zoom", "true");
 	updateTouchPosition(event);
@@ -574,6 +583,7 @@ window.addEventListener("touchstart", function(event) {
 });
 
 window.addEventListener("touchmove", function(event) {
+	if (Game.isSolved) return;
 	updateTouchPosition(event);
 });
 
@@ -586,6 +596,12 @@ window.addEventListener("touchend", function(event) {
 	if (!Game.debug) Game.path.splice(0);
 });
 
+function handle_next_click() {
+	if (!Game.isSolved) return;
+	Game.generate();
+}
+
+// User Agent Constants
 IS_SMALL = false;
 IS_TOUCH_DEVICE = !!(('ontouchstart' in window) ||
 	window.DocumentTouch && document instanceof DocumentTouch);
