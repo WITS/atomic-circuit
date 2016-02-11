@@ -22,6 +22,7 @@ Game.prototype.inputY = 0;
 Game.prototype.inputAtom = null;
 Game.prototype.glowInc = 0;
 Game.prototype.isSolved = false;
+Game.prototype.puzzleId = "1";
 
 // Initialize the DOM elements
 Game.prototype.init = function() {
@@ -44,41 +45,58 @@ Game.prototype.generate = function() {
 	Game.path.splice(0);
 	// Create the atoms
 	window.NEXT_ATOM_ID = 0;
-	this.atoms.push(new Atom({
-		type: "eye",
-		x: 50,
-		y: 300
-	}));
-	this.atoms.push(new Atom({
-		x: 150,
-		y: 300,
-		r: 100
-	}));
-	this.atoms.push(new Atom({
-		x: 300,
-		y: 300,
-		r: 130
-	}));
-	this.atoms.push(new Atom({
-		x: 300,
-		y: 300,
-		r: 100
-	}));
-	this.atoms.push(new Atom({
-		x: 450,
-		y: 300,
-		r: 100
-	}));
-	this.atoms.push(new Atom({
-		type: "eye",
-		x: 550,
-		y: 300
-	}));
-	this.negative.push(new Negative({
-		x: 400,
-		y: 250,
-		r: 40
-	}));
+	var puzzle_id = location.hash.replace("#", "");
+	var puzzle = Puzzles[puzzle_id];
+	if (!puzzle) {
+		puzzle_id = this.puzzleId;
+		puzzle = Puzzles[puzzle_id];
+	} else {
+		this.puzzleId = puzzle_id;
+	}
+	console.log("Loading puzzle #" + puzzle_id);
+	for (var i = puzzle.atoms.length; i --; ) {
+		this.atoms.push(new Atom(puzzle.atoms[i]));
+	}
+	if (puzzle.negative) {
+		for (var i = puzzle.negative.length; i --; ) {
+			this.negative.push(new Negative(puzzle.negative[i]));
+		}
+	}
+	// this.atoms.push(new Atom({
+	// 	type: "eye",
+	// 	x: 50,
+	// 	y: 300
+	// }));
+	// this.atoms.push(new Atom({
+	// 	x: 150,
+	// 	y: 300,
+	// 	r: 100
+	// }));
+	// this.atoms.push(new Atom({
+	// 	x: 300,
+	// 	y: 300,
+	// 	r: 130
+	// }));
+	// this.atoms.push(new Atom({
+	// 	x: 300,
+	// 	y: 300,
+	// 	r: 100
+	// }));
+	// this.atoms.push(new Atom({
+	// 	x: 450,
+	// 	y: 300,
+	// 	r: 100
+	// }));
+	// this.atoms.push(new Atom({
+	// 	type: "eye",
+	// 	x: 550,
+	// 	y: 300
+	// }));
+	// this.negative.push(new Negative({
+	// 	x: 400,
+	// 	y: 250,
+	// 	r: 40
+	// }));
 	// Find points of intersection
 	for (var i = Game.atoms.length; i --; ) {
 		Game.atoms[i].findIntersections();
@@ -554,6 +572,10 @@ window.addEventListener("load", function() {
 			event.preventDefault();
 		});
 	}
+	window.addEventListener("hashchange", function() {
+		Game.puzzleId = "1";
+		Game.generate();
+	});
 });
 
 function handle_resize() {
@@ -647,6 +669,11 @@ window.addEventListener("touchend", function(event) {
 
 function handle_next_click() {
 	if (!Game.isSolved) return;
+	var p_id = +Game.puzzleId;
+	if (!p_id || p_id !== p_id) p_id = 0;
+	var p_id_str = String(++ p_id);
+	if (!Puzzles[p_id_str]) p_id_str = String(-- p_id);
+	location.hash = p_id_str;
 	Game.generate();
 }
 
