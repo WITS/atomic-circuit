@@ -22,6 +22,7 @@ Game.prototype.inputY = 0;
 Game.prototype.inputAtom = null;
 Game.prototype.glowInc = 0;
 Game.prototype.isSolved = false;
+Game.prototype.puzzleId = "1";
 
 // Initialize the DOM elements
 Game.prototype.init = function() {
@@ -44,41 +45,58 @@ Game.prototype.generate = function() {
 	Game.path.splice(0);
 	// Create the atoms
 	window.NEXT_ATOM_ID = 0;
-	this.atoms.push(new Atom({
-		type: "eye",
-		x: 50,
-		y: 300
-	}));
-	this.atoms.push(new Atom({
-		x: 150,
-		y: 300,
-		r: 100
-	}));
-	this.atoms.push(new Atom({
-		x: 300,
-		y: 300,
-		r: 130
-	}));
-	this.atoms.push(new Atom({
-		x: 300,
-		y: 300,
-		r: 100
-	}));
-	this.atoms.push(new Atom({
-		x: 450,
-		y: 300,
-		r: 100
-	}));
-	this.atoms.push(new Atom({
-		type: "eye",
-		x: 550,
-		y: 300
-	}));
-	this.negative.push(new Negative({
-		x: 400,
-		y: 250,
-		r: 40
-	}));
+	var puzzle_id = location.hash.replace("#", "");
+	var puzzle = Puzzles[puzzle_id];
+	if (!puzzle) {
+		puzzle_id = this.puzzleId;
+		puzzle = Puzzles[puzzle_id];
+	} else {
+		this.puzzleId = puzzle_id;
+	}
+	console.log("Loading puzzle #" + puzzle_id);
+	for (var i = puzzle.atoms.length; i --; ) {
+		this.atoms.push(new Atom(puzzle.atoms[i]));
+	}
+	if (puzzle.negative) {
+		for (var i = puzzle.negative.length; i --; ) {
+			this.negative.push(new Negative(puzzle.negative[i]));
+		}
+	}
+	// this.atoms.push(new Atom({
+	// 	type: "eye",
+	// 	x: 50,
+	// 	y: 300
+	// }));
+	// this.atoms.push(new Atom({
+	// 	x: 150,
+	// 	y: 300,
+	// 	r: 100
+	// }));
+	// this.atoms.push(new Atom({
+	// 	x: 300,
+	// 	y: 300,
+	// 	r: 130
+	// }));
+	// this.atoms.push(new Atom({
+	// 	x: 300,
+	// 	y: 300,
+	// 	r: 100
+	// }));
+	// this.atoms.push(new Atom({
+	// 	x: 450,
+	// 	y: 300,
+	// 	r: 100
+	// }));
+	// this.atoms.push(new Atom({
+	// 	type: "eye",
+	// 	x: 550,
+	// 	y: 300
+	// }));
+	// this.negative.push(new Negative({
+	// 	x: 400,
+	// 	y: 250,
+	// 	r: 40
+	// }));
 	// Find points of intersection
 	for (var i = Game.atoms.length; i --; ) {
 		Game.atoms[i].findIntersections();
@@ -100,11 +118,15 @@ Game.prototype.renderPuzzle = function() {
 	for (var i = 25; i --; ) {
 		ctx.beginPath();
 		ctx.fillStyle = "hsl(" + irandom(360) + ", 75%, 50%)";
-		for (var j = 30; j --; ) {
-			var x = irandom(600) * scale;
-			var y = irandom(600) * scale;
-			ctx.moveTo(x, y);
-			ctx.arc(x, y, random_range(2, 40) * scale, 0, Math.PI * 2);
+		for (var j = 30, x = irandom(600), y = irandom(600); j --; ) {
+			var jx = x * scale;
+			var jy = y * scale;
+			ctx.moveTo(jx, jy);
+			ctx.arc(jx, jy, random_range(2, 40) * scale, 0, Math.PI * 2);
+			x += irandom(50);
+			y += irandom(50);
+			if (x > 600) x -= 600;
+			if (y > 600) y -= 600;
 		}
 		ctx.fill();
 	}
@@ -296,14 +318,19 @@ Game.prototype.render = function(skipRender) {
 			} else if (join_via != null && (!prev2_atom ||
 				(prev2_path_obj.a2 == prev2_path_obj.a1 ||
 				prev2_path_obj.atom.type == "eye"))) {
-				prev_path_obj.a1 = join_via;
-				var a0x = prev_atom.x + prev_atom.r * Math.cos(join_via);
-				var a0y = prev_atom.y + prev_atom.r * Math.sin(join_via);
-				var a0 = Math.atan2(a0y - cur_atom.y, a0x - cur_atom.x);
-				Game.inputAtom = cur_atom;
-				var cc = signedAngleDiff(a0, a1) < 0;
-				Game.path.push(
-					{ atom: cur_atom, a0: a0, a1: a1, a2: a0, cc: cc });
+				// var ad = Math.abs(arcLength(prev_path_obj.a0, prev_path_obj.a1,
+				// 	prev_path_obj.cc) - arcLength(prev_path_obj.a0, join_via,
+				// 	prev_path_obj.cc));
+				// if (ad <= 0.5) {
+					prev_path_obj.a1 = join_via;
+					var a0x = prev_atom.x + prev_atom.r * Math.cos(join_via);
+					var a0y = prev_atom.y + prev_atom.r * Math.sin(join_via);
+					var a0 = Math.atan2(a0y - cur_atom.y, a0x - cur_atom.x);
+					Game.inputAtom = cur_atom;
+					var cc = signedAngleDiff(a0, a1) < 0;
+					Game.path.push(
+						{ atom: cur_atom, a0: a0, a1: a1, a2: a0, cc: cc });
+				// }
 			} else {
 				if (Game.debug) console.log("Join via failed v2");
 				var path_obj = prev_path_obj;
@@ -508,6 +535,7 @@ Game.prototype.render = function(skipRender) {
 			}
 			continue;
 		}
+		if ((p.a0 + pi*2) % (pi*2) == (p.a2 + pi*2) % (pi*2)) continue;
 		ctx.arc(p.atom.x * scale, p.atom.y * scale,
 			p.atom.r * scale, (pi*2 + p.a0) % (pi*2),
 			(pi*2 + p.a2) % (pi*2), p.cc);
@@ -544,6 +572,10 @@ window.addEventListener("load", function() {
 			event.preventDefault();
 		});
 	}
+	window.addEventListener("hashchange", function() {
+		Game.puzzleId = "1";
+		Game.generate();
+	});
 });
 
 function handle_resize() {
@@ -637,6 +669,11 @@ window.addEventListener("touchend", function(event) {
 
 function handle_next_click() {
 	if (!Game.isSolved) return;
+	var p_id = +Game.puzzleId;
+	if (!p_id || p_id !== p_id) p_id = 0;
+	var p_id_str = String(++ p_id);
+	if (!Puzzles[p_id_str]) p_id_str = String(-- p_id);
+	location.hash = p_id_str;
 	Game.generate();
 }
 
