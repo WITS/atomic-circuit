@@ -100,11 +100,15 @@ Game.prototype.renderPuzzle = function() {
 	for (var i = 25; i --; ) {
 		ctx.beginPath();
 		ctx.fillStyle = "hsl(" + irandom(360) + ", 75%, 50%)";
-		for (var j = 30; j --; ) {
-			var x = irandom(600) * scale;
-			var y = irandom(600) * scale;
-			ctx.moveTo(x, y);
-			ctx.arc(x, y, random_range(2, 40) * scale, 0, Math.PI * 2);
+		for (var j = 30, x = irandom(600), y = irandom(600); j --; ) {
+			var jx = x * scale;
+			var jy = y * scale;
+			ctx.moveTo(jx, jy);
+			ctx.arc(jx, jy, random_range(2, 40) * scale, 0, Math.PI * 2);
+			x += irandom(50);
+			y += irandom(50);
+			if (x > 600) x -= 600;
+			if (y > 600) y -= 600;
 		}
 		ctx.fill();
 	}
