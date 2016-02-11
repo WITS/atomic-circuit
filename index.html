@@ -8,11 +8,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="black" />
+<link href='https://fonts.googleapis.com/css?family=Roboto:400,500' rel='stylesheet' type='text/css'>
+<!-- <link href='https://fonts.googleapis.com/css?family=Patua+One' rel='stylesheet' type='text/css'> -->
 </head>
 <body>
 <div id='viewport'>
 	<canvas id='outlines'></canvas>
 	<canvas id='userpath'></canvas>
+	<div id='success-screen'>
+		<div class='feedback'>Perfect!</div>
+		<i class='check-mark'></i>
+		<i class='chevron-right' onmouseup='handle_next_click()'></i>
+	</div>
 </div>
 <a id='footer' href='http://feedtheforest.com/'>&copy; 2016 Ian Jones</a>
 </body>

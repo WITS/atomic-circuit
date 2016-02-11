@@ -20,6 +20,8 @@ Game.prototype.rawInputY = 0;
 Game.prototype.inputX = 0;
 Game.prototype.inputY = 0;
 Game.prototype.inputAtom = null;
+Game.prototype.glowInc = 0;
+Game.prototype.isSolved = false;
 
 // Initialize the DOM elements
 Game.prototype.init = function() {
@@ -35,6 +37,8 @@ Game.prototype.init = function() {
 // Generate a puzzle (or, occasionally, load a premade one)
 Game.prototype.generate = function() {
 	// Clear the previous puzzle's data
+	Game.v.removeAttribute("data-solved");
+	Game.isSolved = false;
 	Game.atoms.splice(0);
 	Game.negative.splice(0);
 	Game.path.splice(0);
@@ -64,6 +68,11 @@ Game.prototype.generate = function() {
 		x: 450,
 		y: 300,
 		r: 100
+	}));
+	this.atoms.push(new Atom({
+		type: "eye",
+		x: 550,
+		y: 300
 	}));
 	// Find points of intersection
 	for (var i = Game.atoms.length; i --; ) {
@@ -155,18 +164,23 @@ Game.prototype.render = function(skipRender) {
 				// Tracing the same atom more?
 				var path_obj = Game.path[Game.path.length - 1];
 				var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
-				// Allow for switching cc more easily
-				if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
-					) < 0.25) || (!path_obj.cc && arcLength(path_obj.a0,
-					path_obj.a1, false) < 0.25)) {
-					path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
+				if (arcLength(path_obj.a0, path_obj.a1, path_obj.cc) >
+					3 + arcLength(path_obj.a0, a1, path_obj.cc)) {
+					console.log("Whoa nelly v1");
+				} else {
+					// Allow for switching cc more easily
 					if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
-						) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
-						path_obj.a1, false) > 3)) {
-						path_obj.a2 = path_obj.a0;
+						) < 0.25) || (!path_obj.cc && arcLength(path_obj.a0,
+						path_obj.a1, false) < 0.25)) {
+						path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
+						if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
+							) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
+							path_obj.a1, false) > 3)) {
+							path_obj.a2 = path_obj.a0;
+						}
 					}
+					path_obj.a1 = a1;
 				}
-				path_obj.a1 = a1;
 			}
 		} else if (Game.inputAtom == null) {
 			// Starting, maybe...
@@ -199,7 +213,7 @@ Game.prototype.render = function(skipRender) {
 				Game.path.push(
 					{ atom: cur_atom, a0: a0, a1: a1, a2: a0, cc: cc });
 			} else if (Game.debug) {
-				console.log("Join via failed");
+				console.log("Join via failed v1");
 			}
 		} else if (Game.path.length) {
 			// Retracing your steps?
@@ -218,8 +232,8 @@ Game.prototype.render = function(skipRender) {
 				var intersection = prev_atom.intersections[i];
 				if (intersection.id == cur_atom.id) {
 					var a = angleDiff(intersection.a, prev_path_obj.a1);
-					console.log("Intersection // a = " + a);
-					console.log(intersection);
+					// console.log("Intersection // a = " + a);
+					// console.log(intersection);
 					if (a < nearest_a) {
 						nearest_a = a;
 						join_via = intersection.a;
@@ -233,17 +247,36 @@ Game.prototype.render = function(skipRender) {
 					"\nangleDiff: " + angleDiff(join_via, prev_path_obj.a0));
 			}
 			if (prev2_atom && prev2_atom.id == cur_atom.id &&
-				angleDiff(join_via, prev_path_obj.a0) < 0.1) {
+				angleDiff(join_via, prev_path_obj.a0) < 0.2) {
 				if (prev2_atom.type != "eye") {
-					Game.path.splice(Game.path.length - 1);
-					var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
-					prev2_path_obj.a1 = a1;
-					Game.inputAtom = prev2_atom;
-				} else {
-					// TODO: You won? Maybe?
+					var path_obj = prev_path_obj;
+					var a1 = Math.atan2(i_y - prev_atom.y, i_x - prev_atom.x);
+					if (arcLength(path_obj.a0, path_obj.a1, path_obj.cc) >
+						3 + arcLength(path_obj.a0, a1, path_obj.cc)) {
+						console.log("Join via failed v3");
+						console.log("Whoa nelly v3");
+					} else {
+						var a1 = Math.atan2(i_y - cur_atom.y, i_x - cur_atom.x);
+						Game.path.splice(Game.path.length - 1);
+						prev2_path_obj.a1 = a1;
+						Game.inputAtom = prev2_atom;
+					}
+				} else if (arcLength(prev_path_obj.a0, prev_path_obj.a1,
+						prev_path_obj.cc) > 5) {
+					// You won? Maybe?
+					Game.path.push({ atom: cur_atom, a0: 0, a1: 0, a2: 0, cc: false });
+					prev_path_obj.a1 = prev_path_obj.a0 + Math.PI * 2 +
+						(prev_path_obj.cc ? 1 : -1) * 2e-4;
+					if (Game.inputHeld &&
+						angleDiff(prev_path_obj.a1, prev_path_obj.a2) < 0.2) {
+						Game.inputHeld = false;
+						Game.inputAtom = null;
+						// alert("We've got a winner folks");
+					}
 				}
 			} else if (join_via != null && (!prev2_atom ||
-				prev2_path_obj.a2 == prev2_path_obj.a1)) {
+				(prev2_path_obj.a2 == prev2_path_obj.a1 ||
+				prev2_path_obj.atom.type == "eye"))) {
 				prev_path_obj.a1 = join_via;
 				var a0x = prev_atom.x + prev_atom.r * Math.cos(join_via);
 				var a0y = prev_atom.y + prev_atom.r * Math.sin(join_via);
@@ -253,22 +286,29 @@ Game.prototype.render = function(skipRender) {
 				Game.path.push(
 					{ atom: cur_atom, a0: a0, a1: a1, a2: a0, cc: cc });
 			} else {
-				if (Game.debug) console.log("Join via failed");
-				var a1 = Math.atan2(i_y - prev_atom.y, i_x - prev_atom.x);
-				// Allow for switching cc more easily
+				if (Game.debug) console.log("Join via failed v2");
 				var path_obj = prev_path_obj;
-				if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
-					) < 0.25) || (!path_obj.cc && arcLength(path_obj.a0,
-					path_obj.a1, false) < 0.25)) {
-					path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
+				var a1 = Math.atan2(i_y - prev_atom.y, i_x - prev_atom.x);
+				var d = Math.abs(Math.sqrt(Math.pow(i_y - prev_atom.y, 2) +
+					Math.pow(i_x - prev_atom.x, 2)) - prev_atom.r);
+				if (arcLength(path_obj.a0, path_obj.a1, path_obj.cc) >
+					3 + arcLength(path_obj.a0, a1, path_obj.cc) || d > 40) {
+					console.log("Whoa nelly v2");
+				} else {
+					// Allow for switching cc more easily
 					if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
-						) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
-						path_obj.a1, false) > 3)) {
-						path_obj.a2 = path_obj.a0;
+						) < 0.25) || (!path_obj.cc && arcLength(path_obj.a0,
+						path_obj.a1, false) < 0.25)) {
+						path_obj.cc = signedAngleDiff(path_obj.a0, a1) < 0;
+						if ((path_obj.cc && arcLength(path_obj.a0, path_obj.a1, true
+							) > 3) || (!path_obj.cc && arcLength(path_obj.a0,
+							path_obj.a1, false) > 3)) {
+							path_obj.a2 = path_obj.a0;
+						}
 					}
+					// if (angleDiff(path_obj.a1, a1) <= 0.25) path_obj.a1 = a1;
+					if (prev_d <= 15) path_obj.a1 = a1;
 				}
-				// if (angleDiff(path_obj.a1, a1) <= 0.25) path_obj.a1 = a1;
-				if (prev_d <= 15) path_obj.a1 = a1;
 			}
 		}
 	} else {
@@ -279,7 +319,21 @@ Game.prototype.render = function(skipRender) {
 		var cur_path, cur_index;
 		for (var x = 0, y = Game.path.length; x < y; ++ x) {
 			var x_path = Game.path[x];
-			if (x_path.atom.type == "eye") continue;
+			if (x_path.atom.type == "eye" && !x) continue;
+			if (x_path.atom.type == "eye" && x) {
+				if (Game.inputHeld) {
+					Game.inputHeld = false;
+					// alert("We've got a winner folks");
+				}
+				if (!Game.isSolved) {
+					// TODO: Actually test the game and make sure
+					// this solution is valid
+					Game.isSolved = true;
+					Game.v.setAttribute("data-solved", "true");
+					// alert("We've got a winner folks");
+				}
+				break;
+			}
 			if (x_path.a2 == x_path.a1) continue;
 			cur_path = x_path;
 			cur_index = x;
@@ -309,9 +363,38 @@ Game.prototype.render = function(skipRender) {
 					skipCollisions = true;
 				}
 				cur_path.a2 += 2 * diff;
-				// TODO: Prevent overlap within cur_path
-				// Collision detection
+				// One last eye detector
 				var cur_atom = cur_path.atom;
+				if (cur_index >= 2) {
+					for (var i = cur_atom.intersections.length; i --; ) {
+						var intersection = cur_atom.intersections[i];
+						if (intersection.type != "eye") continue;
+						var a = intersection.a;
+						if ((cur_path.cc && arcLength(cur_path.a0, cur_path.a1, true)
+							+ 0.1 > arcLength(cur_path.a0, a, true)) || (!cur_path.cc &&
+							arcLength(cur_path.a0, cur_path.a1, false) + 0.1 > arcLength(
+							cur_path.a0, a, false))) {
+							console.log("This should probly be a win.");
+							var eye = Game.getAtom(intersection.id);
+							cur_path.a1 = a;
+							if (Game.path.length - 1 == cur_index) {
+								Game.path.push({ atom: eye, a0: 0, a1: 0, a2: 0, cc: false });
+							} else if (Game.path[cur_index + 1].atom == eye) {
+								console.log("Seriously.");
+								if (angleDiff(cur_path.a1, cur_path.a2) < 0.15) {
+									cur_path.a2 = cur_path.a1;
+									diff = 0;
+								}
+							}
+							if (Game.inputHeld) {
+								Game.inputHeld = false;
+								Game.inputAtom = null;
+								// alert("We've got a winner folks");
+							}
+						}
+					}
+				}
+				// Collision detection
 				var px = cur_atom.x + cur_atom.r * Math.cos(cur_path.a2);
 				var py = cur_atom.y + cur_atom.r * Math.sin(cur_path.a2);
 				for (var i = cur_index; i --; ) {
@@ -330,6 +413,18 @@ Game.prototype.render = function(skipRender) {
 						arcLength(i_path.a0, i_path.a1, false) > arcLength(
 							i_path.a0, a, false))) {
 						console.log("Recall // a: " + a + " for i_path#" + i);
+						if (i == 1 && cur_atom == i_atom) {
+							console.log("This should probably be a win");
+							var eye = Game.path[0].atom;
+							cur_path.a1 = i_path.a0;
+							Game.path.push({ atom: eye, a0: 0, a1: 0, a2: 0, cc: false });
+							if (Game.inputHeld) {
+								Game.inputHeld = false;
+								Game.inputAtom = null;
+								// alert("We've got a winner folks");
+							}
+							break;
+						}
 						cur_path.a2 -= diff;
 						cur_path.a1 = cur_path.a2 - diff;
 						Game.path.splice(cur_index + 1);
@@ -345,24 +440,43 @@ Game.prototype.render = function(skipRender) {
 	// Clear the previous pixel data
 	ctx.clearRect(0, 0, Game.c1.width, Game.c1.height);
 	// Render the user path
+	var glow = l_glow = 0;
+	if (!IS_MOBILE) {
+		glow = (12 + 4 * Math.sin(Game.glowInc * 0.08)) * scale;
+		l_glow = 0.75 * glow;
+		++ Game.glowInc;
+	}
 	ctx.fillStyle = "white";
 	ctx.strokeStyle = "white";
 	ctx.lineWidth = 3 * scale;
 	ctx.lineCap = "round";
+	if (!IS_MOBILE) {
+		ctx.shadowColor = "white";
+	}
+	ctx.shadowBlur = glow;
 	var pi = Math.PI;
 	for (var i = Game.path.length; i --; ) {
 		var p = Game.path[i];
 		ctx.beginPath();
+		ctx.shadowBlur = glow;
 		if (p.atom.type == "eye") {
-			ctx.arc(p.atom.x * scale, p.atom.y * scale,
-				8 * scale, 0, Math.PI * 2);
-			ctx.fill();
+			if (!i || Game.path[i - 1].a1 == Game.path[i - 1].a2) {
+				if (!IS_MOBILE) ctx.shadowBlur = l_glow;
+				ctx.arc(p.atom.x * scale, p.atom.y * scale,
+					8 * scale, 0, Math.PI * 2);
+				ctx.fill();
+				if (!IS_MOBILE) ctx.shadowBlur = glow;
+			}
 			continue;
 		}
 		ctx.arc(p.atom.x * scale, p.atom.y * scale,
 			p.atom.r * scale, (pi*2 + p.a0) % (pi*2),
 			(pi*2 + p.a2) % (pi*2), p.cc);
 		ctx.stroke();
+	}
+	if (!IS_MOBILE) {
+		ctx.shadowColor = "transparent";
+		ctx.shadowBlur = 0;
 	}
 	ctx.lineCap = "butt";
 	// if (IS_MOBILE) {
@@ -373,10 +487,19 @@ Game.prototype.render = function(skipRender) {
 	window.requestAnimationFrame(Game.render);
 }
 
+Game.prototype.getAtom = function(id) {
+	for (var i = Game.atoms.length; i --; ) {
+		if (Game.atoms[i].id != id) continue;
+		return Game.atoms[i];
+	}
+	return null;
+}
+
 Game = new Game();
 
 window.addEventListener("load", function() {
 	Game.init();
+	if (IS_MOBILE) document.body.className += "mobile";
 	if (IS_TOUCH_DEVICE) {
 		document.body.addEventListener("touchmove", function(event) {
 			event.preventDefault();
@@ -394,6 +517,9 @@ function handle_resize() {
 	IS_SMALL = l < 400;
 	v.style.width = c0.style.width = c1.style.width = l + "px";
 	v.style.height = c0.style.height = c1.style.height = l + "px";
+	// Update base font size
+	document.body.style.fontSize = (l * 0.02) + "px";
+	// Get the devicePixelRatio
 	window.pixelRatio = window.devicePixelRatio || 1;
 	l *= pixelRatio;
 	c0.width = c1.width = l;
@@ -419,6 +545,7 @@ function updateMousePosition(e) {
 }
 
 window.addEventListener("mousedown", function(event) {
+	if (Game.isSolved) return;
 	Game.inputHeld = true;
 	updateMousePosition(event);
 	// Clear the path?
@@ -426,6 +553,7 @@ window.addEventListener("mousedown", function(event) {
 });
 
 window.addEventListener("mousemove", function(event) {
+	if (Game.isSolved) return;
 	if (Game.inputHeld) updateMousePosition(event);
 });
 
@@ -446,6 +574,7 @@ function updateTouchPosition(e) {
 }
 
 window.addEventListener("touchstart", function(event) {
+	if (Game.isSolved) return;
 	Game.inputHeld = true;
 	if (IS_SMALL) Game.v.setAttribute("data-zoom", "true");
 	updateTouchPosition(event);
@@ -454,6 +583,7 @@ window.addEventListener("touchstart", function(event) {
 });
 
 window.addEventListener("touchmove", function(event) {
+	if (Game.isSolved) return;
 	updateTouchPosition(event);
 });
 
@@ -466,6 +596,12 @@ window.addEventListener("touchend", function(event) {
 	if (!Game.debug) Game.path.splice(0);
 });
 
+function handle_next_click() {
+	if (!Game.isSolved) return;
+	Game.generate();
+}
+
+// User Agent Constants
 IS_SMALL = false;
 IS_TOUCH_DEVICE = !!(('ontouchstart' in window) ||
 	window.DocumentTouch && document instanceof DocumentTouch);
