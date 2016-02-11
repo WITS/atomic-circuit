@@ -32,11 +32,11 @@ body {
 	top: 0;
 }
 
-body:not(.mobile) > canvas {
-	transition: filter 0.3s ease 0.5s;
-	-webkit-transition: -webkit-filter 0.3s ease 0.5s;
-	-moz-transition: -moz-filter 0.3s ease 0.5s;
-	-o-transition: -o-filter 0.3s ease 0.5s;
+body:not(.mobile) #viewport > canvas {
+	transition: filter 0.5s ease 0.5s;
+	-webkit-transition: -webkit-filter 0.5s ease 0.5s;
+	-moz-transition: -moz-filter 0.5s ease 0.5s;
+	-o-transition: -o-filter 0.5s ease 0.5s;
 }
 
 body:not(.mobile) #viewport[data-solved='true'] > canvas {
