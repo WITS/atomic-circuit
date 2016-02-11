@@ -76,7 +76,7 @@ Game.prototype.generate = function() {
 	}));
 	this.negative.push(new Negative({
 		x: 400,
-		y: 300,
+		y: 250,
 		r: 40
 	}));
 	// Find points of intersection
@@ -411,11 +411,11 @@ Game.prototype.render = function(skipRender) {
 									cur_path.a2 = cur_path.a1;
 									diff = 0;
 								}
-							}
-							if (Game.inputHeld) {
-								Game.inputHeld = false;
-								Game.inputAtom = null;
-								// alert("We've got a winner folks");
+								if (Game.inputHeld) {
+									Game.inputHeld = false;
+									Game.inputAtom = null;
+									// alert("We've got a winner folks");
+								}
 							}
 						}
 					}
@@ -451,6 +451,19 @@ Game.prototype.render = function(skipRender) {
 							}
 							break;
 						}
+						cur_path.a2 -= diff;
+						cur_path.a1 = cur_path.a2 - diff;
+						Game.path.splice(cur_index + 1);
+						if (Game.inputHeld) Game.inputAtom = cur_atom;
+						break;
+					}
+				}
+				// Check negative collisions (that doesn't sound correct)
+				for (var i = Game.negative.length; i --; ) {
+					var neg = Game.negative[i];
+					var d = Math.sqrt(Math.pow(px - neg.x, 2) +
+						Math.pow(py - neg.y, 2));
+					if (d <= neg.r) {
 						cur_path.a2 -= diff;
 						cur_path.a1 = cur_path.a2 - diff;
 						Game.path.splice(cur_index + 1);

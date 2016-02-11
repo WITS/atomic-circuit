@@ -52,6 +52,21 @@ Atom.prototype.findIntersections = function() {
 		this.intersections.push(
 			{ id: other.id, type: other.type, a: angle - angle_offset });
 	}
+	for (var i = this.intersections.length; i --; ) {
+		var intersection = this.intersections[i];
+		var ix = this.x + this.r * Math.cos(intersection.a);
+		var iy = this.y + this.r * Math.sin(intersection.a);
+		// Remove intersections that don't really exist
+		for (var j = Game.negative.length; j --; ) {
+			var neg = Game.negative[j];
+			var d = Math.sqrt(Math.pow(ix - neg.x, 2) +
+				Math.pow(iy - neg.y, 2));
+			if (d <= neg.r) {
+				this.intersections.splice(i, 1);
+				break;
+			}
+		}
+	}
 }
 
 Atom.prototype.render = function() {
