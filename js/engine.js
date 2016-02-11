@@ -407,14 +407,14 @@ Game.prototype.render = function(skipRender) {
 								Game.path.push({ atom: eye, a0: 0, a1: 0, a2: 0, cc: false });
 							} else if (Game.path[cur_index + 1].atom == eye) {
 								console.log("Seriously.");
-								if (angleDiff(cur_path.a1, cur_path.a2) < 0.15) {
+								var a_diff = angleDiff(cur_path.a1, cur_path.a2);
+								if (a_diff < 0.15) {
 									cur_path.a2 = cur_path.a1;
 									diff = 0;
 								}
-								if (Game.inputHeld) {
+								if (a_diff <= 0.25 && Game.inputHeld) {
 									Game.inputHeld = false;
 									Game.inputAtom = null;
-									// alert("We've got a winner folks");
 								}
 							}
 						}
