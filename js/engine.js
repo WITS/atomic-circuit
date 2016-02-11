@@ -330,6 +330,13 @@ Game.prototype.render = function(skipRender) {
 					// this solution is valid
 					Game.isSolved = true;
 					Game.v.setAttribute("data-solved", "true");
+					document.querySelector("#success-screen > .feedback"
+						).innerHTML = choose("Superb!", "Perfect!", "Fantastic!",
+						"Awesome!", "Well done!", "Great job!", "Magnificent!",
+						"Wonderful!", "Stunning!", "Incredible!", "Flawless!",
+						"Amazing!", "Impressive!", "Marvelous!", "Excellent!",
+						"Extraordinary!", "Spectacular!", "Splendid!",
+						"Brilliant!", "Dazzling!", "Phenomenal!", "Outstanding!");
 					// alert("We've got a winner folks");
 				}
 				break;
@@ -626,6 +633,10 @@ function irandom(n) {
 
 function random_range(min, max) {
 	return min + (max - min) * Math.random();
+}
+
+function choose() {
+	return arguments[irandom(arguments.length)];
 }
 
 function angleDiff(a1, a2) {
