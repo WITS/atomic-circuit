@@ -33,9 +33,12 @@ body {
 }
 
 body:not(.mobile) #viewport > canvas {
+	-moz-filter: blur(0);
 	transition: filter 0.5s ease 0.5s;
-	-webkit-transition: -webkit-filter 0.5s ease 0.5s;
-	-moz-transition: -moz-filter 0.5s ease 0.5s;
+	-webkit-transition: -webkit-filter 0.5s ease 0.5s,
+		filter 0.5s ease 0.5s;
+	-moz-transition: -moz-filter 0.5s ease 0.5s,
+		filter 0.5s ease 0.5s;
 	-o-transition: -o-filter 0.5s ease 0.5s;
 }
 
@@ -45,8 +48,10 @@ body:not(.mobile) #viewport[data-solved='true'] > canvas {
 	-moz-filter: blur(2em);
 	-o-filter: blur(2em);
 	transition: filter 0.3s ease 0.2s;
-	-webkit-transition: -webkit-filter 0.3s ease 0.2s;
-	-moz-transition: -moz-filter 0.3s ease 0.2s;
+	-webkit-transition: -webkit-filter 0.3s ease 0.2s,
+		filter 0.3s ease 0.2s;
+	-moz-transition: -moz-filter 0.3s ease 0.2s,
+		filter 0.3s ease 0.2s;
 	-o-transition: -o-filter 0.3s ease 0.2s;
 }
 
