@@ -296,14 +296,19 @@ Game.prototype.render = function(skipRender) {
 			} else if (join_via != null && (!prev2_atom ||
 				(prev2_path_obj.a2 == prev2_path_obj.a1 ||
 				prev2_path_obj.atom.type == "eye"))) {
-				prev_path_obj.a1 = join_via;
-				var a0x = prev_atom.x + prev_atom.r * Math.cos(join_via);
-				var a0y = prev_atom.y + prev_atom.r * Math.sin(join_via);
-				var a0 = Math.atan2(a0y - cur_atom.y, a0x - cur_atom.x);
-				Game.inputAtom = cur_atom;
-				var cc = signedAngleDiff(a0, a1) < 0;
-				Game.path.push(
-					{ atom: cur_atom, a0: a0, a1: a1, a2: a0, cc: cc });
+				// var ad = Math.abs(arcLength(prev_path_obj.a0, prev_path_obj.a1,
+				// 	prev_path_obj.cc) - arcLength(prev_path_obj.a0, join_via,
+				// 	prev_path_obj.cc));
+				// if (ad <= 0.5) {
+					prev_path_obj.a1 = join_via;
+					var a0x = prev_atom.x + prev_atom.r * Math.cos(join_via);
+					var a0y = prev_atom.y + prev_atom.r * Math.sin(join_via);
+					var a0 = Math.atan2(a0y - cur_atom.y, a0x - cur_atom.x);
+					Game.inputAtom = cur_atom;
+					var cc = signedAngleDiff(a0, a1) < 0;
+					Game.path.push(
+						{ atom: cur_atom, a0: a0, a1: a1, a2: a0, cc: cc });
+				// }
 			} else {
 				if (Game.debug) console.log("Join via failed v2");
 				var path_obj = prev_path_obj;
