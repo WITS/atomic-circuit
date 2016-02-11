@@ -74,6 +74,11 @@ Game.prototype.generate = function() {
 		x: 550,
 		y: 300
 	}));
+	this.negative.push(new Negative({
+		x: 400,
+		y: 300,
+		r: 40
+	}));
 	// Find points of intersection
 	for (var i = Game.atoms.length; i --; ) {
 		Game.atoms[i].findIntersections();
@@ -89,7 +94,7 @@ Game.prototype.renderPuzzle = function() {
 	// Clear the previous pixel data
 	window.ctx = Game.c0.getContext("2d");
 	ctx.clearRect(0, 0, Game.c0.width, Game.c0.height);
-	// Render the dust
+	// Render the out-of-focus background
 	ctx.globalAlpha = IS_MOBILE ? "0.03" : "0.02";
 	ctx.globalCompositeOperation = "multiply";
 	for (var i = 25; i --; ) {
@@ -103,12 +108,26 @@ Game.prototype.renderPuzzle = function() {
 		}
 		ctx.fill();
 	}
+	var uri = Game.c0.toDataURL();
+	ctx.clearRect(0, 0, Game.c0.width, Game.c0.height);
 	ctx.globalAlpha = "1";
 	ctx.globalCompositeOperation = "source-over";
 	// Render the atoms
 	for (var i = Game.atoms.length; i --; ) {
 		Game.atoms[i].render();
 	}
+	// Render the negative space
+	for (var i = Game.negative.length; i --; ) {
+		Game.negative[i].render();
+	}
+	var bg = new Image();
+	bg.src = uri;
+	bg.addEventListener("load", function() {
+		var ctx = Game.c0.getContext("2d");
+		ctx.globalCompositeOperation = "destination-over";
+		ctx.drawImage(bg, 0, 0);
+		ctx.globalCompositeOperation = "source-over";
+	});
 	// Prepare for rendering in realtime
 	window.ctx = Game.c1.getContext("2d");
 }
