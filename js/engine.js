@@ -508,6 +508,7 @@ Game.prototype.render = function(skipRender) {
 			}
 			continue;
 		}
+		if ((p.a0 + pi*2) % (pi*2) == (p.a2 + pi*2) % (pi*2)) continue;
 		ctx.arc(p.atom.x * scale, p.atom.y * scale,
 			p.atom.r * scale, (pi*2 + p.a0) % (pi*2),
 			(pi*2 + p.a2) % (pi*2), p.cc);
