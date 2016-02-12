@@ -140,24 +140,36 @@ body.mobile #viewport[data-solved='true']::before {
 	background-repeat: no-repeat;
 }
 
+#success-screen > i.replay,
 #success-screen > i.chevron-right {
 	position: absolute;
-	right: 10%;
 	bottom: 10%;
 	display: block;
 	width: 15%;
 	height: 15%;
 	background-color: rgba(255, 255, 255, 0.5);
-	background-image: url("icon/chevron_right.svg");
-	background-size: contain;
 	background-position: 50% 50%;
 	background-repeat: no-repeat;
+	border: 1em solid transparent;
 	border-radius: 50%;
 	z-index: 10;
 }
 
+#success-screen > i.replay:hover,
 #success-screen > i.chevron-right:hover {
 	background-color: rgba(255, 255, 255, 0.9);
+}
+
+#success-screen > i.replay {
+	left: 10%;
+	background-image: url("icon/refresh.svg");
+	background-size: contain;
+}
+
+#success-screen > i.chevron-right {
+	right: 10%;
+	background-image: url("icon/chevron_right.svg");
+	background-size: contain;
 }
 
 #footer {
