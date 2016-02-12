@@ -7,6 +7,7 @@ Atom = function(json) {
 	var json = json || {};
 	this.id = NEXT_ATOM_ID ++;
 	if (json.type) this.type = json.type;
+	if (json.value) this.value = json.value;
 	if (json.x) this.x = json.x;
 	if (json.y) this.y = json.y;
 	if (json.r) this.r = json.r;
@@ -14,6 +15,7 @@ Atom = function(json) {
 }
 
 Atom.prototype.type = "default";
+Atom.prototype.value = 1;
 Atom.prototype.id = 0;
 Atom.prototype.x = 0;
 Atom.prototype.y = 0;
@@ -84,6 +86,42 @@ Atom.prototype.render = function() {
 	ctx.arc(this.x * scale, this.y * scale, this.r * scale,
 		0, Math.PI * 2);
 	ctx.stroke();
+	// Draw type-specific icons
+	if (this.type == "die") {
+		ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+		var w = Math.floor(12 * scale);
+		var h = Math.floor(12 * scale);
+		switch (this.value) {
+			case 2:
+				ctx.fillRect(Math.floor((this.x - 13) * scale),
+					Math.floor((this.y - 13) * scale), w, h);
+				ctx.fillRect(Math.floor((this.x + 1) * scale),
+					Math.floor((this.y + 1) * scale), w, h);
+				break;
+			case 3:
+				ctx.fillRect(Math.floor((this.x - 13) * scale),
+					Math.floor((this.y - 13) * scale), w, h);
+				ctx.fillRect(Math.floor((this.x + 1) * scale),
+					Math.floor((this.y - 13) * scale), w, h);
+				ctx.fillRect(Math.floor((this.x - 6) * scale),
+					Math.floor((this.y + 1) * scale), w, h);
+				break;
+			case 4:
+				ctx.fillRect(Math.floor((this.x - 13) * scale),
+					Math.floor((this.y - 13) * scale), w, h);
+				ctx.fillRect(Math.floor((this.x + 1) * scale),
+					Math.floor((this.y - 13) * scale), w, h);
+				ctx.fillRect(Math.floor((this.x - 13) * scale),
+					Math.floor((this.y + 1) * scale), w, h);
+				ctx.fillRect(Math.floor((this.x + 1) * scale),
+					Math.floor((this.y + 1) * scale), w, h);
+				break;
+			default:
+				ctx.fillRect(Math.floor((this.x - 6) * scale),
+					Math.floor((this.y - 6) * scale), w, h);
+				break;
+		}
+	}
 	// Draw intersections
 	if (false && Game.debug) {
 		ctx.fillStyle = "red";

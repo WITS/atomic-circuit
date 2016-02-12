@@ -22,6 +22,8 @@ Game.prototype.inputY = 0;
 Game.prototype.inputAtom = null;
 Game.prototype.glowInc = 0;
 Game.prototype.isSolved = false;
+Game.prototype.isInvalid = false;
+Game.prototype.pathOpacity = 1;
 Game.prototype.puzzleId = "1";
 
 // Initialize the DOM elements
@@ -39,7 +41,9 @@ Game.prototype.init = function() {
 Game.prototype.generate = function() {
 	// Clear the previous puzzle's data
 	Game.v.removeAttribute("data-solved");
+	Game.pathOpacity = 1;
 	Game.isSolved = false;
+	Game.isInvalid = false;
 	Game.atoms.splice(0);
 	Game.negative.splice(0);
 	Game.path.splice(0);
@@ -115,10 +119,11 @@ Game.prototype.renderPuzzle = function() {
 	// Render the out-of-focus background
 	ctx.globalAlpha = IS_MOBILE ? "0.03" : "0.02";
 	ctx.globalCompositeOperation = "multiply";
-	for (var i = 25; i --; ) {
+	var x = irandom(600), y = irandom(600)
+	for (var i = 15; i --; ) {
 		ctx.beginPath();
 		ctx.fillStyle = "hsl(" + irandom(360) + ", 75%, 50%)";
-		for (var j = 30, x = irandom(600), y = irandom(600); j --; ) {
+		for (var j = 30; j --; ) {
 			var jx = x * scale;
 			var jy = y * scale;
 			ctx.moveTo(jx, jy);
@@ -128,6 +133,8 @@ Game.prototype.renderPuzzle = function() {
 			if (x > 600) x -= 600;
 			if (y > 600) y -= 600;
 		}
+		y -= 50 + irandom(50);
+		if (y < 0) y += 600;
 		ctx.fill();
 	}
 	var uri = Game.c0.toDataURL();
@@ -374,16 +381,20 @@ Game.prototype.render = function(skipRender) {
 				if (!Game.isSolved) {
 					// TODO: Actually test the game and make sure
 					// this solution is valid
-					Game.isSolved = true;
-					Game.v.setAttribute("data-solved", "true");
-					document.querySelector("#success-screen > .feedback"
-						).innerHTML = choose("Superb!", "Perfect!", "Fantastic!",
-						"Awesome!", "Well done!", "Great job!", "Magnificent!",
-						"Wonderful!", "Stunning!", "Incredible!", "Flawless!",
-						"Amazing!", "Impressive!", "Marvelous!", "Excellent!",
-						"Extraordinary!", "Spectacular!", "Splendid!",
-						"Brilliant!", "Dazzling!", "Phenomenal!", "Outstanding!");
-					// alert("We've got a winner folks");
+					Game.isSolved = Game.verifySolution();
+					if (Game.isSolved) {
+						Game.v.setAttribute("data-solved", "true");
+						document.querySelector("#success-screen > .feedback"
+							).innerHTML = choose("Superb!", "Perfect!", "Fantastic!",
+							"Awesome!", "Well done!", "Great job!", "Magnificent!",
+							"Wonderful!", "Stunning!", "Incredible!", "Flawless!",
+							"Amazing!", "Impressive!", "Marvelous!", "Excellent!",
+							"Extraordinary!", "Spectacular!", "Splendid!",
+							"Brilliant!", "Dazzling!", "Phenomenal!", "Outstanding!");
+						// alert("We've got a winner folks");
+					} else {
+						Game.isInvalid = true;
+					}
 				}
 				break;
 			}
@@ -503,6 +514,7 @@ Game.prototype.render = function(skipRender) {
 		}
 	}
 	if (skipRender) return;
+	if (!Game.inputHeld && !Game.isSolved && Game.pathOpacity > 0) Game.pathOpacity -= 0.01;
 	// Clear the previous pixel data
 	ctx.clearRect(0, 0, Game.c1.width, Game.c1.height);
 	// Render the user path
@@ -512,12 +524,17 @@ Game.prototype.render = function(skipRender) {
 		l_glow = 0.75 * glow;
 		++ Game.glowInc;
 	}
+	ctx.globalAlpha = Math.max(0, Game.pathOpacity);
 	ctx.fillStyle = "white";
 	ctx.strokeStyle = "white";
 	ctx.lineWidth = 3 * scale;
 	ctx.lineCap = "round";
 	if (!IS_MOBILE) {
 		ctx.shadowColor = "white";
+	}
+	if (Game.isInvalid) {
+		ctx.fillStyle = ctx.strokeStyle = "red";
+		if (!IS_MOBILE) ctx.shadowColor = "red";
 	}
 	ctx.shadowBlur = glow;
 	var pi = Math.PI;
@@ -551,6 +568,7 @@ Game.prototype.render = function(skipRender) {
 			Game.render(true);
 		}, 2);
 	// }
+	ctx.globalAlpha = 1;
 	window.requestAnimationFrame(Game.render);
 }
 
@@ -560,6 +578,26 @@ Game.prototype.getAtom = function(id) {
 		return Game.atoms[i];
 	}
 	return null;
+}
+
+Game.prototype.verifySolution = function() {
+	var dice_count = new Object();
+	for (var i = Game.path.length; i --; ) {
+		var p = Game.path[i];
+		if (p.atom.type != "die") continue;
+		if (!dice_count[p.atom.id]) dice_count[p.atom.id] = 0;
+		++ dice_count[p.atom.id];
+	}
+	for (var i = Game.atoms.length; i --; ) {
+		var atom = Game.atoms[i];
+		if (atom.type == "die") {
+			if (!dice_count[atom.id] ||
+				dice_count[atom.id] < atom.value) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 Game = new Game();
@@ -618,9 +656,11 @@ function updateMousePosition(e) {
 window.addEventListener("mousedown", function(event) {
 	if (Game.isSolved) return;
 	Game.inputHeld = true;
+	Game.isInvalid = false;
+	Game.pathOpacity = 1;
 	updateMousePosition(event);
 	// Clear the path?
-	if (Game.debug) Game.path.splice(0);
+	Game.path.splice(0);
 });
 
 window.addEventListener("mousemove", function(event) {
@@ -631,8 +671,6 @@ window.addEventListener("mousemove", function(event) {
 window.addEventListener("mouseup", function(event) {
 	Game.inputHeld = false;
 	Game.inputAtom = null;
-	// Clear the path?
-	if (!Game.debug) Game.path.splice(0);
 });
 
 function updateTouchPosition(e) {
@@ -647,10 +685,12 @@ function updateTouchPosition(e) {
 window.addEventListener("touchstart", function(event) {
 	if (Game.isSolved) return;
 	Game.inputHeld = true;
+	Game.isInvalid = false;
+	Game.pathOpacity = 1;
 	if (IS_SMALL) Game.v.setAttribute("data-zoom", "true");
 	updateTouchPosition(event);
 	// Clear the path?
-	if (Game.debug) Game.path.splice(0);
+	Game.path.splice(0);
 });
 
 window.addEventListener("touchmove", function(event) {
@@ -663,8 +703,6 @@ window.addEventListener("touchend", function(event) {
 	Game.inputHeld = false;
 	Game.inputAtom = null;
 	if (IS_SMALL) Game.v.setAttribute("data-zoom", "false");
-	// Clear the path?
-	if (!Game.debug) Game.path.splice(0);
 });
 
 function handle_next_click() {

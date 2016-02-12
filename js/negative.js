@@ -15,9 +15,8 @@ Negative.prototype.y = 0;
 Negative.prototype.r = 0;
 
 Negative.prototype.render = function() {
-	ctx.lineWidth = scale * 6;
 	ctx.globalCompositeOperation = "destination-out";
-	ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+	ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
 	ctx.fillStyle = "black";
 	ctx.beginPath();
 	// var a_max = Math.max(20, this.r * 0.5);
@@ -37,6 +36,12 @@ Negative.prototype.render = function() {
 	// ctx.shadowColor = "black";
 	// ctx.shadowBlur = 16 * scale;
 	ctx.globalCompositeOperation = "source-atop";
+	ctx.lineWidth = scale * 16;
+	ctx.stroke();
+	ctx.lineWidth = scale * 8;
+	ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+	ctx.stroke();
+	ctx.lineWidth = scale * 4;
 	ctx.stroke();
 	// ctx.shadowColor = "transparent";
 	// ctx.shadowBlur = 0;
