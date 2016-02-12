@@ -115,10 +115,11 @@ Game.prototype.renderPuzzle = function() {
 	// Render the out-of-focus background
 	ctx.globalAlpha = IS_MOBILE ? "0.03" : "0.02";
 	ctx.globalCompositeOperation = "multiply";
-	for (var i = 25; i --; ) {
+	var x = irandom(600), y = irandom(600)
+	for (var i = 15; i --; ) {
 		ctx.beginPath();
 		ctx.fillStyle = "hsl(" + irandom(360) + ", 75%, 50%)";
-		for (var j = 30, x = irandom(600), y = irandom(600); j --; ) {
+		for (var j = 30; j --; ) {
 			var jx = x * scale;
 			var jy = y * scale;
 			ctx.moveTo(jx, jy);
@@ -128,6 +129,8 @@ Game.prototype.renderPuzzle = function() {
 			if (x > 600) x -= 600;
 			if (y > 600) y -= 600;
 		}
+		y -= 50 + irandom(50);
+		if (y < 0) y += 600;
 		ctx.fill();
 	}
 	var uri = Game.c0.toDataURL();
